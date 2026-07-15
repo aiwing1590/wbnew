@@ -10,10 +10,10 @@
             theme: {
                 extend: {
                     colors: {
-                        claudeBg: '#f4f4f0',    // Светлый кремовый фон
-                        claudeCard: '#ffffff',  // Чисто белые карточки
-                        claudeText: '#2d2d2d',  // Мягкий темный текст
-                        claudeBorder: '#e5e5e0' // Аккуратные серые границы
+                        claudeBg: '#f4f4f0',
+                        claudeCard: '#ffffff',
+                        claudeText: '#2d2d2d',
+                        claudeBorder: '#e5e5e0'
                     },
                     fontFamily: {
                         sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
@@ -68,7 +68,7 @@
         <!-- Лоадер -->
         <div id="loader" class="hidden flex flex-col items-center justify-center py-8 gap-3">
             <div class="spinner"></div>
-            <p class="text-stone-500 text-sm">Агент изучает данные...</p>
+            <p class="text-stone-500 text-sm">ИИ-аналитик изучает ваш отчет...</p>
         </div>
 
         <!-- Секция результатов -->
@@ -83,15 +83,30 @@
                     <div id="profit-val" class="text-2xl font-serif">0 ₽</div>
                 </div>
                 <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm">
-                    <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Топ-товар</div>
-                    <div id="best-product-val" class="text-lg font-serif truncate">...</div>
+                    <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Эффективность продаж</div>
+                    <div id="best-product-val" class="text-sm font-medium">...</div>
                 </div>
             </div>
 
+            <!-- Раздел вопросов к ИИ и шаблоны -->
             <div class="bg-claudeCard border border-claudeBorder p-6 rounded-xl shadow-sm flex flex-col gap-4">
                 <h3 class="font-serif text-xl">Спросить ИИ-агента</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="query-input" placeholder="Задайте вопрос по отчету..." class="flex-grow border border-claudeBorder rounded-lg px-4 py-2 focus:outline-none focus:border-stone-400">
+                
+                <!-- Быстрые шаблоны -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="useTemplate('Покажи топ 3 товара по чистой прибыли')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
+                        📈 Топ-3 товара по прибыли
+                    </button>
+                    <button onclick="useTemplate('Какая доля от общей выручки уходит на логистику?')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
+                        💸 Доля расходов на логистику
+                    </button>
+                    <button onclick="useTemplate('Сделай общий финансовый аудит этого отчета')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
+                        🔍 Сделай краткий аудит отчета
+                    </button>
+                </div>
+
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="query-input" placeholder="Задайте вопрос по отчету или кликните шаблон выше..." class="flex-grow border border-claudeBorder rounded-lg px-4 py-2 focus:outline-none focus:border-stone-400">
                     <button id="ask-btn" class="bg-stone-100 border border-claudeBorder text-claudeText px-6 py-2 rounded-lg hover:bg-stone-200 transition-colors font-medium">Спросить</button>
                 </div>
                 <div id="ai-response-box" class="hidden mt-2 text-stone-700 leading-relaxed text-sm p-4 bg-stone-50 rounded-lg border border-claudeBorder whitespace-pre-line"></div>
@@ -100,9 +115,7 @@
     </div>
 
     <script>
-        // Правильная ссылка на твой бэкенд на Render
         const BACKEND_URL = 'https://wbnew.onrender.com';
-        
         let savedPassword = '';
 
         const loginScreen = document.getElementById('login-screen');
@@ -136,6 +149,12 @@
             sendRequest(queryInput.value.trim());
         });
 
+        // Функция использования кнопок-шаблонов
+        function useTemplate(text) {
+            queryInput.value = text;
+            sendRequest(text);
+        }
+
         async function sendRequest(userQuery = "") {
             const file = fileInput.files[0];
             if (!file) return alert('Пожалуйста, выберите Excel-файл!');
@@ -155,12 +174,6 @@
 
                 if (data.error) {
                     alert(`Ошибка: ${data.error}`);
-                    if (data.error.toLowerCase().includes('пароль')) {
-                        appScreen.classList.add('hidden');
-                        appScreen.classList.remove('flex');
-                        loginScreen.classList.remove('hidden');
-                        authPassword.value = '';
-                    }
                 } else {
                     document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
                     document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
@@ -170,6 +183,8 @@
                     if (data.ai_response) {
                         aiBox.innerText = data.ai_response;
                         aiBox.classList.remove('hidden');
+                    } else {
+                        aiBox.classList.add('hidden');
                     }
                     resultsSection.classList.remove('hidden');
                     resultsSection.classList.add('flex');
