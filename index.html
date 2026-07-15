@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WB AI Agent — Профессиональная аналитика</title>
+    <!-- Подключаем Tailwind CSS для крутого дизайна -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0d0e15',
+                        cardBg: '#161925',
+                        accent: '#bc7af9',
+                        accentHover: '#a855f7',
+                        borderCol: '#2d3142'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0d0e15;
+        }
+        /* Анимация летающего светящегося шара для лоадера */
+        @keyframes fly {
+            0% { left: 0%; transform: translateX(0); }
+            100% { left: 100%; transform: translateX(-16px); }
+        }
+        .glowing-ball {
+            animation: fly 1.4s ease-in-out infinite alternate;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col justify-between">
+
+    <!-- Хедер -->
+    <header class="border-b border-borderCol py-5 px-6 md:px-12 flex justify-between items-center bg-darkBg/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📊</span>
+            <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-accent bg-clip-text text-transparent">WB AI Agent</span>
+            <span class="text-xs bg-accent/20 text-accent font-semibold px-2.5 py-0.5 rounded-full border border-accent/30">PRO</span>
+        </div>
+        <div class="text-sm text-slate-400 font-medium">Версия 2.0</div>
+    </header>
+
+    <!-- Главный контент -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-10 flex flex-col gap-8">
+        
+        <!-- Верхняя панель управления (Загрузка файла и пароль) -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-cardBg border border-borderCol p-6 rounded-2xl shadow-xl">
+            <!-- Загрузка файла -->
+            <div class="flex flex-col gap-2">
+                <label class="text-xs uppercase font-bold text-slate-400 tracking-wider">Финансовый отчет</label>
+                <input type="file" id="file-uploader" accept=".xlsx" class="block w-full text-sm text-slate-400
+                    file:mr-4 file:py-2.5 file:px-4
+                    file:rounded-xl file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-accent/10 file:text-accent
+                    hover:file:bg-accent/20 file:cursor-pointer cursor-pointer border border-borderCol rounded-xl p-1 bg-darkBg">
+            </div>
+
+            <!-- Пароль доступа -->
+            <div class="flex flex-col gap-2">
+                <label class="text-xs uppercase font-bold text-slate-400 tracking-wider">Пароль доступа</label>
+                <input type="password" id="password-input" placeholder="••••••" class="bg-darkBg border border-borderCol rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-accent transition-colors font-mono tracking-widest">
+            </div>
+
+            <!-- Кнопка запуска -->
+            <div class="flex flex-col justify-end">
+                <button id="submit-btn" class="w-full bg-accent hover:bg-accentHover text-darkBg font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-accent/20 hover:shadow-accent/45">
+                    Анализировать отчет
+                </button>
+            </div>
+        </section>
+
+        <!-- Лоадер (скрыт по умолчанию) -->
+        <div id="loader" class="hidden my-4 bg-cardBg border border-borderCol p-8 rounded-2xl flex flex-col items-center justify-center gap-4 shadow-xl">
+            <div class="w-48 h-1.5 bg-darkBg rounded-full relative overflow-visible">
+                <div class="glowing-ball w-4 h-4 rounded-full bg-gradient-to-r from-violet-300 via-accent to-purple-800 absolute -top-1.5 shadow-[0_0_15px_#bc7af9]"></div >
+            </div>
+            <span class="text-accent font-semibold tracking-wider text-xs uppercase animate-pulse">ИИ-аналитик изучает ваш отчет...</span>
+        </div>
+
+        <!-- Секция результатов (показывается после запроса) -->
+        <section id="results-section" class="hidden flex flex-col gap-8">
+            
+            <!-- Метрики -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Выручка -->
+                <div class="bg-cardBg border border-borderCol p-6 rounded-2xl hover:border-accent transition-all group">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider block mb-2">Выручка</span>
+                    <span id="revenue-val" class="text-3xl font-bold text-accent group-hover:text-white transition-colors">0 ₽</span>
+                </div>
+                <!-- Чистая прибыль -->
+                <div class="bg-cardBg border border-borderCol p-6 rounded-2xl hover:border-accent transition-all group">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider block mb-2">Чистая прибыль</span>
+                    <span id="profit-val" class="text-3xl font-bold text-accent group-hover:text-white transition-colors">0 ₽</span>
+                </div>
+                <!-- Лучший товар -->
+                <div class="bg-cardBg border border-borderCol p-6 rounded-2xl hover:border-accent transition-all group">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider block mb-2">Топ-товар по прибыли</span>
+                    <span id="best-product-val" class="text-xl font-semibold text-white block mt-1 line-clamp-1">Загрузка...</span>
+                </div>
+            </div>
+
+            <!-- ИИ-Ассистент -->
+            <div class="bg-cardBg border border-borderCol p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">🤖</span>
+                    <h3 class="text-lg font-bold">Задать вопрос ИИ-агенту</h3>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input type="text" id="query-input" placeholder="Например: какая доля расходов уходит на логистику?" class="flex-grow bg-darkBg border border-borderCol rounded-full px-6 py-4 text-white focus:outline-none focus:border-accent transition-all shadow-inner">
+                    <button id="ask-btn" class="bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 font-semibold px-8 py-4 rounded-full transition-all">
+                        Спросить ИИ
+                    </button>
+                </div>
+
+                <!-- Окно ответа ИИ -->
+                <div id="ai-response-box" class="hidden bg-darkBg border border-accent/30 p-6 rounded-2xl text-slate-300 leading-relaxed text-sm whitespace-pre-line">
+                    Здесь появится ответ ИИ...
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Футер -->
+    <footer class="border-t border-borderCol py-6 text-center text-xs text-slate-500">
+        &copy; 2026 WB AI Agent. Разработано профессионально.
+    </footer>
+
+    <!-- Скрипт связи с твоим Render Бэкендом -->
+    <script>
+        // СЮДА ВСТАВЬ СВОЮ ССЫЛКУ С RENDER (удали слеш на конце, если есть)
+        const BACKEND_URL = 'https://wbagent.onrender.com'; 
+
+        const submitBtn = document.getElementById('submit-btn');
+        const askBtn = document.getElementById('ask-btn');
+        const fileInput = document.getElementById('file-uploader');
+        const passwordInput = document.getElementById('password-input');
+        const queryInput = document.getElementById('query-input');
+        const loader = document.getElementById('loader');
+        const resultsSection = document.getElementById('results-section');
+
+        // Кнопка основного анализа отчета
+        submitBtn.addEventListener('click', () => sendRequest());
+
+        // Кнопка вопроса к ИИ
+        askBtn.addEventListener('click', () => {
+            const query = queryInput.value.trim();
+            if (!query) {
+                alert('Пожалуйста, введите ваш вопрос!');
+                return;
+            }
+            sendRequest(query);
+        });
+
+        async function sendRequest(userQuery = "") {
+            const file = fileInput.files[0];
+            const password = passwordInput.value.trim();
+
+            if (!file) {
+                alert('Пожалуйста, выберите Excel-файл!');
+                return;
+            }
+            if (!password) {
+                alert('Введите пароль доступа!');
+                return;
+            }
+
+            // Показываем анимацию загрузки
+            loader.classList.remove('hidden');
+            if (!userQuery) {
+                resultsSection.classList.add('hidden');
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('app_password', password);
+            if (userQuery) {
+                formData.append('user_query', userQuery);
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/analyze`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(`Ошибка: ${data.error}`);
+                } else {
+                    // Раскладываем данные по карточкам
+                    document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
+                    document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
+                    document.getElementById('best-product-val').innerText = data.best_product;
+
+                    // Если был вопрос к ИИ, выводим ответ
+                    const responseBox = document.getElementById('ai-response-box');
+                    if (data.ai_response) {
+                        responseBox.innerText = data.ai_response;
+                        responseBox.classList.remove('hidden');
+                    } else {
+                        responseBox.classList.add('hidden');
+                    }
+
+                    resultsSection.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Не удалось связаться с сервером аналитики на Render.');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
