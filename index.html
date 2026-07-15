@@ -1,50 +1,98 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-[#f4f4f0] p-10">
+<head>
+    <meta charset="UTF-8">
+    <title>WB AI Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .coffee-bg { background-color: #6f4e37 !important; }
+        .coffee-hover:hover { background-color: #5a3e2d !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
+        .toast { transition: all 0.3s ease; transform: translateY(20px); opacity: 0; pointer-events: none; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        #upload-container { transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; z-index: 20; }
+        .fly-away { top: 120px !important; transform: translate(-50%, 0) scale(0.8) !important; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen flex flex-col items-center">
 
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
-        <div class="bg-white p-10 rounded-2xl shadow-lg text-center">
-            <h1 class="text-2xl mb-4">WB AI Agent</h1>
-            <input type="password" id="p" class="border p-2 rounded mb-2 w-full" placeholder="Пароль">
-            <button id="btn-login" class="bg-black text-white px-4 py-2 rounded w-full">Войти</button>
+    <!-- Уведомление об ошибке -->
+    <div id="error-toast" class="toast fixed bottom-8 bg-white border border-red-200 p-4 rounded-xl shadow-lg flex items-center gap-3 z-50">
+        <span class="text-red-500">❌</span>
+        <p id="error-msg" class="text-sm font-medium text-red-600">Упс, кажется, вы ввели неправильный пароль!</p>
+    </div>
+
+    <!-- 1. ЭКРАН ВХОДА (Всегда первый) -->
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-40 animate-fade-in">
+        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
+            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
+            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4 focus:outline-none">
+            <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
         </div>
     </div>
 
-    <div id="app" class="max-w-2xl mx-auto">
-        <input type="file" id="f" class="mb-4">
-        <button id="btn-send" class="bg-black text-white px-4 py-2 rounded">Анализ</button>
-        <div id="res" class="mt-4 p-4 bg-white rounded shadow hidden"></div>
+    <!-- 2. ЭКРАН АППА (Скрыт до входа) -->
+    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col items-center gap-6 animate-fade-in mt-20">
+        <header class="text-center"><h1 class="font-serif text-3xl">Аналитика отчета</h1></header>
+
+        <div id="upload-container" class="bg-white/70 backdrop-blur-md border border-stone-200 rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
+            <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-stone-200 cursor-pointer">
+            <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full hover:bg-black transition-all w-full">Запустить анализ</button>
+        </div>
+
+        <div id="results-section" class="hidden w-full flex-col gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
+            </div>
+            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm">
+                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
+                <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('btn-login').onclick = () => {
-            if (document.getElementById('p').value === "Wb123prof") {
-                document.getElementById('login-screen').style.display = 'none';
-            } else { alert("Неверный пароль!"); }
-        };
+        const BACKEND_URL = 'https://wbagent-real.onrender.com';
+        let savedPass = '';
 
-        document.getElementById('btn-send').onclick = async () => {
-            const file = document.getElementById('f').files[0];
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('app_password', 'Wb123prof');
+        function showError(msg) {
+            const toast = document.getElementById('error-toast');
+            document.getElementById('error-msg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const pass = document.getElementById('auth-password').value.trim();
+            if (pass !== "Wb123prof") return showError("Упс, кажется, вы ввели неправильный пароль!");
+            savedPass = pass;
+            document.getElementById('login-screen').classList.add('hidden');
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', async () => {
+            const file = document.getElementById('file-uploader').files[0];
+            if (!file) return showError('Выберите файл!');
             
-            try {
-                const res = await fetch('https://wbagent-real.onrender.com/analyze', { method: 'POST', body: fd });
-                const text = await res.text(); // Читаем как текст, чтобы не было ошибки парсинга
-                console.log("Ответ сервера:", text);
-                
-                let d;
-                try { d = JSON.parse(text); } catch(e) { throw new Error("Сервер не прислал JSON: " + text); }
-                
-                if (d.error) throw new Error(d.error);
-                
-                const resDiv = document.getElementById('res');
-                resDiv.innerHTML = `Выручка: ${d.total_revenue || 0} ₽<br>Прибыль: ${d.net_profit || 0} ₽`;
-                resDiv.classList.remove('hidden');
-            } catch (e) { alert("Ошибка: " + e.message); }
-        };
+            document.getElementById('upload-container').classList.add('fly-away');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('app_password', savedPass);
+            
+            const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.error) return showError(data.error);
+
+            document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
+            const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
+            for (const [k, v] of Object.entries(data.expenses)) expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
+            document.getElementById('expenses-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.remove('hidden').classList.add('flex');
+            document.getElementById('app-screen').classList.remove('hidden');
+        });
     </script>
 </body>
 </html>
