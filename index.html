@@ -4,71 +4,72 @@
     <meta charset="UTF-8">
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
+    </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen flex flex-col items-center">
-    <div id="app-screen" class="w-full max-w-4xl px-4 py-12 flex flex-col gap-6">
-        <header class="text-center"><h1 class="font-serif text-3xl">Аналитика отчета</h1></header>
-        
-        <div class="bg-white border p-6 rounded-xl flex gap-4">
-            <input type="file" id="file-uploader" class="flex-grow border-dashed border p-2 rounded-lg">
-            <button id="submit-btn" class="bg-[#2d2d2d] text-white px-6 py-3 rounded-lg hover:bg-black">Запустить</button>
+    <!-- Вход -->
+    <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4 animate-fade-in">
+        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
+            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
+            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4 focus:outline-none">
+            <button id="login-btn" class="w-full bg-[#2d2d2d] text-white rounded-xl py-3 hover:bg-black">Войти</button>
         </div>
-
+    </div>
+    <!-- Приложение -->
+    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6 animate-fade-in">
+        <header class="text-center"><h1 class="font-serif text-3xl">Аналитика отчета</h1></header>
+        <div class="bg-white border p-6 rounded-xl flex gap-4">
+            <input type="file" id="file-uploader" class="flex-grow border-dashed border rounded-lg p-2">
+            <button id="submit-btn" class="bg-[#2d2d2d] text-white px-6 py-3 rounded-lg hover:bg-black">Анализ</button>
+        </div>
         <div id="results-section" class="hidden flex flex-col gap-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white border p-5 rounded-xl"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
                 <div class="bg-white border p-5 rounded-xl"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
-                <div class="bg-white border p-5 rounded-xl"><div class="text-xs uppercase text-stone-500">Статус</div><div id="best-product-val" class="text-sm">...</div></div>
             </div>
-
-            <div id="expenses-section" class="hidden bg-white border rounded-xl p-6">
-                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
+            <div id="expenses-section" class="bg-white border rounded-xl p-6">
+                <h3 class="font-serif text-xl mb-4">Расходы</h3>
                 <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
             </div>
-
-            <!-- БЛОК ИИ ВОЗВРАЩЕН! -->
             <div class="bg-white border p-6 rounded-xl">
-                <h3 class="font-serif text-xl mb-4">Спросить ИИ-агента</h3>
-                <div class="flex gap-2 mb-4">
-                    <button onclick="useTemplate('Топ')" class="bg-stone-100 px-3 py-1 rounded-full text-sm">📈 Топ товаров</button>
-                    <button onclick="useTemplate('Аудит')" class="bg-stone-100 px-3 py-1 rounded-full text-sm">🔍 Аудит</button>
-                </div>
-                <input type="text" id="query-input" placeholder="Ваш вопрос..." class="w-full border rounded-lg px-4 py-2 mb-2">
+                <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
+                <div class="flex gap-2 mb-4"><button onclick="useTemplate('Аудит')" class="bg-stone-100 px-4 py-2 rounded-full text-sm">🔍 Аудит</button></div>
+                <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
                 <button id="ask-btn" class="bg-stone-200 px-6 py-2 rounded-lg">Спросить</button>
-                <div id="ai-response-box" class="hidden mt-4 p-4 bg-stone-50 rounded-lg border text-sm whitespace-pre-line"></div>
+                <div id="ai-response-box" class="hidden mt-4 p-4 bg-stone-50 rounded-lg border text-sm"></div>
             </div>
         </div>
     </div>
-
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        function useTemplate(t) { document.getElementById('query-input').value = t; sendRequest(t); }
-        document.getElementById('submit-btn').addEventListener('click', () => sendRequest());
-        document.getElementById('ask-btn').addEventListener('click', () => sendRequest(document.getElementById('query-input').value));
-
+        let savedPass = '';
+        document.getElementById('login-btn').addEventListener('click', () => {
+            savedPass = document.getElementById('auth-password').value;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden').classList.add('flex');
+        });
         async function sendRequest(q = "") {
-            const file = document.getElementById('file-uploader').files[0];
-            if (!file) return alert('Выберите файл!');
-            const formData = new FormData(); formData.append('file', file); formData.append('app_password', '123');
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file-uploader').files[0]);
+            formData.append('app_password', savedPass);
             if (q) formData.append('user_query', q);
-            
             const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
             const data = await res.json();
-            
+            if (data.error) return alert(data.error);
             document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
             document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-            
-            const expList = document.getElementById('expenses-list');
-            expList.innerHTML = '';
-            for (const [key, val] of Object.entries(data.expenses)) {
-                expList.innerHTML += `<div><span class="text-stone-500">${key}:</span><br><strong>${val.toLocaleString('ru-RU')} ₽</strong></div>`;
-            }
+            const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
+            for (const [k, v] of Object.entries(data.expenses)) expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
             document.getElementById('expenses-section').classList.remove('hidden');
             document.getElementById('results-section').classList.remove('hidden').classList.add('flex');
-            
-            const box = document.getElementById('ai-response-box');
-            if (data.ai_response) { box.innerText = data.ai_response; box.classList.remove('hidden'); }
+            if (data.ai_response) { const box = document.getElementById('ai-response-box'); box.innerText = data.ai_response; box.classList.remove('hidden'); }
         }
+        document.getElementById('submit-btn').addEventListener('click', () => sendRequest());
+        document.getElementById('ask-btn').addEventListener('click', () => sendRequest(document.getElementById('query-input').value));
+        function useTemplate(t) { document.getElementById('query-input').value = t; sendRequest(t); }
     </script>
 </body>
 </html>
