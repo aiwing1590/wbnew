@@ -33,108 +33,63 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Эстетичное появление карточки входа */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body class="bg-claudeBg text-claudeText font-sans min-h-screen flex flex-col items-center">
 
-    <!-- 1. ЭКРАН ВХОДА (PREMIUM LIGHT EDITION) -->
+    <!-- ЭКРАН ВХОДА -->
     <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4">
         <div class="bg-claudeCard border border-claudeBorder rounded-2xl p-10 shadow-[0_12px_40px_rgba(0,0,0,0.03)] max-w-sm w-full text-center animate-fade-in">
-            
-            <!-- Геометрический дышащий AI-логотип -->
             <div class="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-                <!-- Внешнее мягкое пульсирующее кольцо -->
                 <div class="absolute inset-0 rounded-full border border-stone-200 animate-ping opacity-40"></div>
-                <!-- Внутреннее медленно вращающееся пунктирное кольцо -->
                 <div class="absolute w-12 h-12 rounded-full border border-dashed border-stone-400 animate-[spin_12s_linear_infinite] opacity-60"></div>
-                <!-- Тёмное ядро по центру -->
                 <div class="w-4 h-4 rounded-full bg-stone-800 shadow-sm animate-pulse"></div>
             </div>
-
-            <!-- Текст -->
             <p class="text-[10px] text-stone-400 tracking-[0.2em] uppercase font-medium mb-1.5">Have a productive session</p>
             <h1 class="font-serif text-3xl mb-2 tracking-tight text-stone-900">WB AI Agent</h1>
             <p class="text-stone-500 mb-8 text-sm">Введите пароль для доступа к системе</p>
-            
-            <!-- Поля авторизации -->
             <div class="space-y-4">
-                <input type="password" id="auth-password" placeholder="Пароль" class="w-full border border-claudeBorder rounded-xl px-4 py-3 text-center tracking-[0.3em] font-semibold text-lg focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-stone-300">
-                <button id="login-btn" class="w-full bg-claudeText text-white rounded-xl py-3 hover:bg-stone-900 active:scale-[0.98] transition-all font-medium text-sm shadow-sm">
-                    Войти в систему
-                </button>
+                <input type="password" id="auth-password" placeholder="Пароль" class="w-full border border-claudeBorder rounded-xl px-4 py-3 text-center tracking-[0.3em] font-semibold text-lg focus:outline-none focus:border-stone-500 transition-all">
+                <button id="login-btn" class="w-full bg-claudeText text-white rounded-xl py-3 hover:bg-stone-900 transition-all font-medium text-sm">Войти в систему</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. ОСНОВНОЙ ЭКРАН ПРИЛОЖЕНИЯ -->
+    <!-- ОСНОВНОЙ ЭКРАН -->
     <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6 animate-fade-in">
-        
-        <header class="text-center mb-4">
-            <h1 class="font-serif text-3xl">Аналитика отчета</h1>
-        </header>
+        <header class="text-center mb-4"><h1 class="font-serif text-3xl">Аналитика отчета</h1></header>
 
-        <!-- Загрузка файла -->
         <div class="bg-claudeCard border border-claudeBorder rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-4">
-            <input type="file" id="file-uploader" accept=".xlsx" class="flex-grow w-full text-sm text-stone-500
-                file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
-                file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700
-                hover:file:bg-stone-200 cursor-pointer border border-dashed border-claudeBorder rounded-lg p-2">
-            <button id="submit-btn" class="bg-claudeText text-white px-6 py-3 rounded-lg hover:bg-black transition-colors font-medium whitespace-nowrap">
-                Запустить анализ
-            </button>
+            <input type="file" id="file-uploader" accept=".xlsx" class="flex-grow w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer border border-dashed border-claudeBorder rounded-lg p-2">
+            <button id="submit-btn" class="bg-claudeText text-white px-6 py-3 rounded-lg hover:bg-black transition-colors font-medium">Запустить анализ</button>
         </div>
 
-        <!-- Лоадер -->
-        <div id="loader" class="hidden flex flex-col items-center justify-center py-8 gap-3">
-            <div class="spinner"></div>
-            <p class="text-stone-500 text-sm">ИИ-аналитик изучает ваш отчет...</p>
-        </div>
+        <div id="loader" class="hidden flex flex-col items-center py-8 gap-3"><div class="spinner"></div><p class="text-stone-500 text-sm">Анализ данных...</p></div>
 
-        <!-- Секция результатов -->
         <div id="results-section" class="hidden flex-col gap-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
-                    <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Выручка</div>
-                    <div id="revenue-val" class="text-2xl font-serif">0 ₽</div>
-                </div>
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
-                    <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Чистая прибыль</div>
-                    <div id="profit-val" class="text-2xl font-serif">0 ₽</div>
-                </div>
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
-                    <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Эффективность продаж</div>
-                    <div id="best-product-val" class="text-sm font-medium text-stone-700">...</div>
-                </div>
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm"><div class="text-xs text-stone-500 uppercase mb-1">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm"><div class="text-xs text-stone-500 uppercase mb-1">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm"><div class="text-xs text-stone-500 uppercase mb-1">Статус</div><div id="best-product-val" class="text-sm font-medium">...</div></div>
             </div>
 
-            <!-- Спросить ИИ и чипсы быстрых шаблонов -->
+            <!-- Блок расходов (НОВЫЙ) -->
+            <div id="expenses-section" class="hidden bg-claudeCard border border-claudeBorder rounded-xl p-6 shadow-sm">
+                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
+                <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
+            </div>
+
             <div class="bg-claudeCard border border-claudeBorder p-6 rounded-xl shadow-sm flex flex-col gap-4">
                 <h3 class="font-serif text-xl">Спросить ИИ-агента</h3>
-                
-                <!-- Шаблоны (Prompt Chips) -->
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="useTemplate('Покажи топ 3 товара по чистой прибыли')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
-                        📈 Топ-3 товара по прибыли
-                    </button>
-                    <button onclick="useTemplate('Какая доля от общей выручки уходит на логистику?')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
-                        💸 Доля расходов на логистику
-                    </button>
-                    <button onclick="useTemplate('Сделай общий финансовый аудит этого отчета')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
-                        🔍 Сделай краткий аудит отчета
-                    </button>
+                    <button onclick="useTemplate('Покажи топ 3 товара по чистой прибыли')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors">📈 Топ-3 товара</button>
+                    <button onclick="useTemplate('Какая доля от общей выручки уходит на логистику?')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors">💸 Логистика</button>
+                    <button onclick="useTemplate('Сделай общий финансовый аудит этого отчета')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors">🔍 Аудит</button>
                 </div>
-
                 <div class="flex gap-2 mt-2">
-                    <input type="text" id="query-input" placeholder="Задайте вопрос по отчету или кликните шаблон выше..." class="flex-grow border border-claudeBorder rounded-lg px-4 py-2 focus:outline-none focus:border-stone-400">
+                    <input type="text" id="query-input" placeholder="Ваш вопрос..." class="flex-grow border border-claudeBorder rounded-lg px-4 py-2 focus:outline-none focus:border-stone-400">
                     <button id="ask-btn" class="bg-stone-100 border border-claudeBorder text-claudeText px-6 py-2 rounded-lg hover:bg-stone-200 transition-colors font-medium">Спросить</button>
                 </div>
                 <div id="ai-response-box" class="hidden mt-2 text-stone-700 leading-relaxed text-sm p-4 bg-stone-50 rounded-lg border border-claudeBorder whitespace-pre-line"></div>
@@ -143,87 +98,54 @@
     </div>
 
     <script>
-        // Твоя новая проверенная ссылка на свежий бэкенд
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
         let savedPassword = '';
 
-        const loginScreen = document.getElementById('login-screen');
-        const appScreen = document.getElementById('app-screen');
-        const authPassword = document.getElementById('auth-password');
-        const loginBtn = document.getElementById('login-btn');
-        
-        const fileInput = document.getElementById('file-uploader');
-        const submitBtn = document.getElementById('submit-btn');
-        const loader = document.getElementById('loader');
-        const resultsSection = document.getElementById('results-section');
-        const queryInput = document.getElementById('query-input');
-        const askBtn = document.getElementById('ask-btn');
-
-        loginBtn.addEventListener('click', () => {
-            const pass = authPassword.value.trim();
-            if (!pass) return alert('Пожалуйста, введите пароль.');
-            savedPassword = pass; 
-            loginScreen.classList.add('hidden');
-            appScreen.classList.remove('hidden');
-            appScreen.classList.add('flex');
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const pass = document.getElementById('auth-password').value.trim();
+            if (!pass) return;
+            savedPassword = pass;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('flex');
         });
 
-        authPassword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginBtn.click();
-        });
-
-        submitBtn.addEventListener('click', () => sendRequest());
-        askBtn.addEventListener('click', () => {
-            if (!queryInput.value.trim()) return alert('Введите вопрос!');
-            sendRequest(queryInput.value.trim());
-        });
-
-        // Функция быстрой подстановки вопроса по кнопке-чипсу
-        function useTemplate(text) {
-            queryInput.value = text;
-            sendRequest(text);
-        }
+        function useTemplate(text) { document.getElementById('query-input').value = text; sendRequest(text); }
+        document.getElementById('submit-btn').addEventListener('click', () => sendRequest());
+        document.getElementById('ask-btn').addEventListener('click', () => sendRequest(document.getElementById('query-input').value.trim()));
 
         async function sendRequest(userQuery = "") {
-            const file = fileInput.files[0];
-            if (!file) return alert('Пожалуйста, выберите Excel-файл!');
-
-            loader.classList.remove('hidden');
-            if (!userQuery) resultsSection.classList.add('hidden');
-
+            const file = document.getElementById('file-uploader').files[0];
+            if (!file) return alert('Выберите файл!');
+            document.getElementById('loader').classList.remove('hidden');
             const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', savedPassword); 
+            formData.append('file', file); formData.append('app_password', savedPassword);
             if (userQuery) formData.append('user_query', userQuery);
 
             try {
-                const response = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error('Сервер упал при обработке файла.');
-                const data = await response.json();
+                const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.error) return alert(data.error);
 
-                if (data.error) {
-                    alert(`Ошибка: ${data.error}`);
-                } else {
-                    document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
-                    document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                    document.getElementById('best-product-val').innerText = data.best_product;
+                document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
+                document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
+                document.getElementById('best-product-val').innerText = data.best_product;
 
-                    const aiBox = document.getElementById('ai-response-box');
-                    if (data.ai_response) {
-                        aiBox.innerHTML = data.ai_response.replace(/\n/g, '<br>');
-                        aiBox.classList.remove('hidden');
-                    } else {
-                        aiBox.classList.add('hidden');
-                    }
-                    resultsSection.classList.remove('hidden');
-                    resultsSection.classList.add('flex');
+                const expList = document.getElementById('expenses-list');
+                expList.innerHTML = '';
+                for (const [key, val] of Object.entries(data.expenses)) {
+                    expList.innerHTML += `<div><span class="text-stone-500">${key}:</span><br><strong>${val.toLocaleString('ru-RU')} ₽</strong></div>`;
                 }
-            } catch (err) {
-                console.error(err);
-                alert('Произошла ошибка на сервере Render. Проверь логи!');
-            } finally {
-                loader.classList.add('hidden'); 
-            }
+                document.getElementById('expenses-section').classList.remove('hidden');
+                document.getElementById('results-section').classList.remove('hidden');
+                document.getElementById('results-section').classList.add('flex');
+                if (data.ai_response) {
+                    const box = document.getElementById('ai-response-box');
+                    box.innerHTML = data.ai_response.replace(/\n/g, '<br>');
+                    box.classList.remove('hidden');
+                }
+            } catch (err) { alert('Ошибка связи с сервером!'); }
+            finally { document.getElementById('loader').classList.add('hidden'); }
         }
     </script>
 </body>
