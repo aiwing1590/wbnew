@@ -6,13 +6,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .coffee-bg { background-color: #6f4e37 !important; }
-        #upload-container { transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; z-index: 20; }
-        .fly-away { top: 80px !important; transform: translate(-50%, 0) scale(0.7) !important; opacity: 0.5; pointer-events: none; }
+        .coffee-hover:hover { background-color: #5a3e2d !important; }
+        
+        #upload-container { 
+            transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); 
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 90%; max-width: 500px; 
+            z-index: 20; 
+        }
+        .fly-away { 
+            top: 80px !important; 
+            transform: translate(-50%, 0) scale(0.7) !important; 
+            opacity: 0.5; 
+            z-index: 1 !important; 
+        }
     </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
 
-    <!-- 1. ЭКРАН ВХОДА (Всегда первый) -->
+    <!-- ЭКРАН ВХОДА -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
         <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
             <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
@@ -22,11 +36,11 @@
         </div>
     </div>
 
-    <!-- 2. ОСНОВНОЙ ЭКРАН -->
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
     <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
         <div id="upload-container" class="bg-white/90 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
             <input type="file" id="file-uploader" class="w-full text-sm">
-            <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full">Запустить анализ</button>
+            <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full coffee-hover">Запустить анализ</button>
         </div>
 
         <div id="results-section" class="hidden w-full flex-col gap-6 mt-20">
@@ -41,7 +55,7 @@
             <div id="ai-section" class="bg-white border p-6 rounded-xl shadow-sm">
                 <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
                 <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
-                <button id="ask-btn" class="coffee-bg text-white px-6 py-2 rounded-lg">Спросить</button>
+                <button id="ask-btn" class="coffee-bg text-white px-6 py-2 rounded-lg coffee-hover">Спросить</button>
                 <div id="ai-response-box" class="mt-4 p-4 bg-stone-50 rounded-lg border text-sm hidden"></div>
             </div>
         </div>
@@ -50,7 +64,6 @@
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
         
-        // Логика входа
         document.getElementById('login-btn').addEventListener('click', () => {
             if (document.getElementById('auth-password').value.trim() === "Wb123prof") {
                 document.getElementById('login-screen').style.display = 'none';
@@ -59,7 +72,6 @@
             }
         });
 
-        // Логика анализа
         document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
             if (!file) return alert('Выберите файл!');
