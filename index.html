@@ -33,17 +33,45 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Плавное проявление экрана входа */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
     </style>
 </head>
 <body class="bg-claudeBg text-claudeText font-sans min-h-screen flex flex-col items-center">
 
-    <!-- 1. ЭКРАН ВХОДА -->
+    <!-- 1. ЭКРАН ВХОДА (УЛУЧШЕННЫЙ, КЛАССИЧЕСКИЙ PREMIUM) -->
     <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4">
-        <div class="bg-claudeCard border border-claudeBorder rounded-xl p-8 shadow-sm max-w-sm w-full text-center">
-            <h1 class="font-serif text-3xl mb-2">WB AI Agent</h1>
-            <p class="text-stone-500 mb-6 text-sm">Введите пароль для доступа к системе</p>
-            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border border-claudeBorder rounded-lg px-4 py-2.5 mb-4 focus:outline-none focus:border-stone-400 transition-colors">
-            <button id="login-btn" class="w-full bg-claudeText text-white rounded-lg py-2.5 hover:bg-black transition-colors font-medium">Войти</button>
+        <div class="bg-claudeCard border border-claudeBorder rounded-2xl p-10 shadow-[0_12px_40px_rgba(0,0,0,0.03)] max-w-sm w-full text-center animate-fade-in">
+            
+            <!-- Интерактивная минималистичная AI-анимация -->
+            <div class="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+                <!-- Внешнее пульсирующее кольцо -->
+                <div class="absolute inset-0 rounded-full border border-stone-200 animate-ping opacity-40"></div>
+                <!-- Внутреннее медленно вращающееся пунктирное кольцо -->
+                <div class="absolute w-12 h-12 rounded-full border border-dashed border-stone-400 animate-[spin_12s_linear_infinite] opacity-60"></div>
+                <!-- Статичное благородное ядро по центру -->
+                <div class="w-4 h-4 rounded-full bg-stone-800 shadow-sm animate-pulse"></div>
+            </div>
+
+            <!-- Текстовый блок -->
+            <p class="text-[10px] text-stone-400 tracking-[0.2em] uppercase font-medium mb-1.5">Have a productive session</p>
+            <h1 class="font-serif text-3xl mb-2 tracking-tight text-stone-900">WB AI Agent</h1>
+            <p class="text-stone-500 mb-8 text-sm">Введите пароль для доступа к системе</p>
+            
+            <!-- Поле ввода и кнопка -->
+            <div class="space-y-4">
+                <input type="password" id="auth-password" placeholder="Пароль" class="w-full border border-claudeBorder rounded-xl px-4 py-3 text-center tracking-[0.3em] font-semibold text-lg focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-stone-300">
+                <button id="login-btn" class="w-full bg-claudeText text-white rounded-xl py-3 hover:bg-stone-900 active:scale-[0.98] transition-all font-medium text-sm shadow-sm">
+                    Войти в систему
+                </button>
+            </div>
         </div>
     </div>
 
