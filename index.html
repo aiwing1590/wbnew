@@ -5,53 +5,56 @@
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Кофейный цвет для кнопок: bg-[#6f4e37] */
+        .coffee-bg { background-color: #6f4e37 !important; }
+        .coffee-hover:hover { background-color: #5a3e2d !important; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
-        .toast { transition: all 0.3s ease; transform: translateY(20px); opacity: 0; }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        /* Эффект улетания вверх */
-        .fly-away { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(-100px); pointer-events: none; }
+        
+        /* Блок выбора файла - центр экрана */
+        #upload-container {
+            transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            z-index: 20;
+        }
+        /* Состояние после нажатия - улетает вверх */
+        .fly-away {
+            top: 5% !important;
+            transform: translate(-50%, 0) scale(0.8) !important;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen flex flex-col items-center">
-    
-    <div id="error-toast" class="toast fixed bottom-8 bg-white border border-red-200 p-4 rounded-xl shadow-lg flex items-center gap-3 z-50">
-        <span class="text-red-500">❌</span>
-        <p id="error-msg" class="text-sm font-medium text-red-600">Упс, кажется, вы ввели неправильный пароль!</p>
+
+    <!-- Блок выбора файла -->
+    <div id="upload-container" class="bg-white/70 backdrop-blur-md border border-stone-200 rounded-3xl p-8 shadow-xl flex flex-col items-center gap-4">
+        <h2 class="font-serif text-xl">Загрузка отчета</h2>
+        <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-stone-200 cursor-pointer">
+        <button id="submit-btn" class="coffee-bg coffee-hover text-white px-8 py-3 rounded-full transition-all w-full">Запустить анализ</button>
     </div>
 
-    <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4 animate-fade-in">
-        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
-            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
-            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4 focus:outline-none">
-            <button id="login-btn" class="w-full bg-[#2d2d2d] text-white rounded-xl py-3 hover:bg-black">Войти</button>
-        </div>
-    </div>
-
-    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col items-center gap-6 animate-fade-in">
-        <header class="text-center"><h1 class="font-serif text-3xl">Аналитика отчета</h1></header>
-
-        <!-- ЦЕНТРИРОВАННЫЙ БЛОК ВЫБОРА ФАЙЛА -->
-        <div id="upload-container" class="bg-white/60 backdrop-blur-sm border border-stone-200 rounded-2xl p-8 shadow-sm flex flex-col items-center gap-4 w-full max-w-lg transition-all duration-700">
-            <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-stone-200 hover:file:bg-stone-300 cursor-pointer">
-            <button id="submit-btn" class="bg-[#2d2d2d] text-white px-8 py-3 rounded-full hover:bg-black transition-all">Запустить анализ</button>
-        </div>
-
-        <div id="loader" class="hidden flex flex-col items-center py-8"><div class="spinner border-t-black border-4 w-8 h-8 rounded-full animate-spin"></div></div>
-
-        <div id="results-section" class="hidden w-full flex-col gap-6 animate-fade-in">
+    <!-- Основной экран (изначально скрыт) -->
+    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6 animate-fade-in mt-20">
+        <div id="results-section" class="hidden flex-col gap-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white border p-5 rounded-xl"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
-                <div class="bg-white border p-5 rounded-xl"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
             </div>
-            <div id="expenses-section" class="bg-white border rounded-xl p-6">
-                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
+            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm">
+                <h3 class="font-serif text-xl mb-4">Расходы</h3>
                 <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
             </div>
-            <div class="bg-white border p-6 rounded-xl">
+            <div class="bg-white border p-6 rounded-xl shadow-sm">
                 <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
                 <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
-                <button id="ask-btn" class="bg-stone-200 px-6 py-2 rounded-lg">Спросить</button>
+                <button id="ask-btn" class="coffee-bg coffee-hover text-white px-6 py-2 rounded-lg">Спросить</button>
                 <div id="ai-response-box" class="hidden mt-4 p-4 bg-stone-50 rounded-lg border text-sm"></div>
             </div>
         </div>
@@ -59,60 +62,37 @@
 
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        let savedPass = '';
-
-        function showError(msg) {
-            const toast = document.getElementById('error-toast');
-            document.getElementById('error-msg').innerText = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const pass = document.getElementById('auth-password').value.trim();
-            const formData = new FormData();
-            formData.append('app_password', pass);
-            formData.append('file', new Blob());
-            try {
-                const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.error && data.error.includes("пароль")) return showError("Упс, кажется, вы ввели неправильный пароль!");
-                savedPass = pass;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-            } catch { showError("Ошибка сервера"); }
-        });
-
-        async function sendRequest(q = "") {
+        
+        document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
-            if (!file) return showError('Выберите Excel-файл!');
+            if (!file) return alert('Выберите файл!');
             
-            // Эффект улетания
+            // Запускаем анимацию улетания
             document.getElementById('upload-container').classList.add('fly-away');
-            document.getElementById('loader').classList.remove('hidden');
+            
+            // Показываем контент через небольшую задержку, чтобы анимация была плавной
+            setTimeout(() => {
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('flex');
+            }, 400);
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('app_password', savedPass);
-            if (q) formData.append('user_query', q);
+            formData.append('app_password', '123'); // Пароль пока хардкодом для простоты
             
-            try {
-                const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.error) return showError(data.error);
-
-                document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
-                document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
-                for (const [k, v] of Object.entries(data.expenses)) expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
-                document.getElementById('expenses-section').classList.remove('hidden');
-                document.getElementById('results-section').classList.remove('hidden');
-                document.getElementById('results-section').classList.add('flex');
-                if (data.ai_response) { const box = document.getElementById('ai-response-box'); box.innerText = data.ai_response; box.classList.remove('hidden'); }
-            } catch { showError("Ошибка обработки"); } finally { document.getElementById('loader').classList.add('hidden'); }
-        }
-        document.getElementById('submit-btn').addEventListener('click', () => sendRequest());
-        document.getElementById('ask-btn').addEventListener('click', () => sendRequest(document.getElementById('query-input').value));
+            const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            if (data.error) return alert(data.error);
+            document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
+            
+            const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
+            for (const [k, v] of Object.entries(data.expenses)) expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
+            document.getElementById('expenses-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('flex');
+        });
     </script>
 </body>
 </html>
