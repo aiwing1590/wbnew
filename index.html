@@ -34,7 +34,7 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Плавное проявление экрана входа */
+        /* Эстетичное появление карточки входа */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -46,26 +46,26 @@
 </head>
 <body class="bg-claudeBg text-claudeText font-sans min-h-screen flex flex-col items-center">
 
-    <!-- 1. ЭКРАН ВХОДА (УЛУЧШЕННЫЙ, КЛАССИЧЕСКИЙ PREMIUM) -->
+    <!-- 1. ЭКРАН ВХОДА (PREMIUM LIGHT EDITION) -->
     <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4">
         <div class="bg-claudeCard border border-claudeBorder rounded-2xl p-10 shadow-[0_12px_40px_rgba(0,0,0,0.03)] max-w-sm w-full text-center animate-fade-in">
             
-            <!-- Интерактивная минималистичная AI-анимация -->
+            <!-- Геометрический дышащий AI-логотип -->
             <div class="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-                <!-- Внешнее пульсирующее кольцо -->
+                <!-- Внешнее мягкое пульсирующее кольцо -->
                 <div class="absolute inset-0 rounded-full border border-stone-200 animate-ping opacity-40"></div>
                 <!-- Внутреннее медленно вращающееся пунктирное кольцо -->
                 <div class="absolute w-12 h-12 rounded-full border border-dashed border-stone-400 animate-[spin_12s_linear_infinite] opacity-60"></div>
-                <!-- Статичное благородное ядро по центру -->
+                <!-- Тёмное ядро по центру -->
                 <div class="w-4 h-4 rounded-full bg-stone-800 shadow-sm animate-pulse"></div>
             </div>
 
-            <!-- Текстовый блок -->
+            <!-- Текст -->
             <p class="text-[10px] text-stone-400 tracking-[0.2em] uppercase font-medium mb-1.5">Have a productive session</p>
             <h1 class="font-serif text-3xl mb-2 tracking-tight text-stone-900">WB AI Agent</h1>
             <p class="text-stone-500 mb-8 text-sm">Введите пароль для доступа к системе</p>
             
-            <!-- Поле ввода и кнопка -->
+            <!-- Поля авторизации -->
             <div class="space-y-4">
                 <input type="password" id="auth-password" placeholder="Пароль" class="w-full border border-claudeBorder rounded-xl px-4 py-3 text-center tracking-[0.3em] font-semibold text-lg focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-stone-300">
                 <button id="login-btn" class="w-full bg-claudeText text-white rounded-xl py-3 hover:bg-stone-900 active:scale-[0.98] transition-all font-medium text-sm shadow-sm">
@@ -76,7 +76,7 @@
     </div>
 
     <!-- 2. ОСНОВНОЙ ЭКРАН ПРИЛОЖЕНИЯ -->
-    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6">
+    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6 animate-fade-in">
         
         <header class="text-center mb-4">
             <h1 class="font-serif text-3xl">Аналитика отчета</h1>
@@ -102,25 +102,25 @@
         <!-- Секция результатов -->
         <div id="results-section" class="hidden flex-col gap-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm">
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
                     <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Выручка</div>
                     <div id="revenue-val" class="text-2xl font-serif">0 ₽</div>
                 </div>
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm">
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
                     <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Чистая прибыль</div>
                     <div id="profit-val" class="text-2xl font-serif">0 ₽</div>
                 </div>
-                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm">
+                <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm animate-fade-in">
                     <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Эффективность продаж</div>
-                    <div id="best-product-val" class="text-sm font-medium">...</div>
+                    <div id="best-product-val" class="text-sm font-medium text-stone-700">...</div>
                 </div>
             </div>
 
-            <!-- Раздел вопросов к ИИ и шаблоны -->
+            <!-- Спросить ИИ и чипсы быстрых шаблонов -->
             <div class="bg-claudeCard border border-claudeBorder p-6 rounded-xl shadow-sm flex flex-col gap-4">
                 <h3 class="font-serif text-xl">Спросить ИИ-агента</h3>
                 
-                <!-- Быстрые шаблоны -->
+                <!-- Шаблоны (Prompt Chips) из Streamlit -->
                 <div class="flex flex-wrap gap-2">
                     <button onclick="useTemplate('Покажи топ 3 товара по чистой прибыли')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 border border-claudeBorder px-3 py-1.5 rounded-full transition-colors font-medium">
                         📈 Топ-3 товара по прибыли
@@ -143,6 +143,7 @@
     </div>
 
     <script>
+        // Твоя проверенная ссылка на бэкенд
         const BACKEND_URL = 'https://wbnew.onrender.com';
         let savedPassword = '';
 
@@ -177,7 +178,7 @@
             sendRequest(queryInput.value.trim());
         });
 
-        // Функция использования кнопок-шаблонов
+        // Функция быстрой подстановки вопроса по кнопке-чипсу
         function useTemplate(text) {
             queryInput.value = text;
             sendRequest(text);
@@ -209,7 +210,7 @@
 
                     const aiBox = document.getElementById('ai-response-box');
                     if (data.ai_response) {
-                        aiBox.innerText = data.ai_response;
+                        aiBox.innerHTML = data.ai_response.replace(/\n/g, '<br>');
                         aiBox.classList.remove('hidden');
                     } else {
                         aiBox.classList.add('hidden');
@@ -226,4 +227,4 @@
         }
     </script>
 </body>
-</html>
+</html>ы
