@@ -5,39 +5,33 @@
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Плавное появление элементов */
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-in { opacity: 0; animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-in { opacity: 0; animation: slideIn 0.6s ease forwards; }
         .delay-1 { animation-delay: 0.2s; }
         .delay-2 { animation-delay: 0.4s; }
         .delay-3 { animation-delay: 0.6s; }
         
         .coffee-bg { background-color: #6f4e37 !important; }
         .coffee-hover:hover { background-color: #5a3e2d !important; }
-        .toast { transition: all 0.3s ease; transform: translateY(20px); opacity: 0; pointer-events: none; }
-        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        
         #upload-container { transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; z-index: 20; }
         .fly-away { top: 120px !important; transform: translate(-50%, 0) scale(0.8) !important; opacity: 0.5; }
     </style>
 </head>
-<body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen flex flex-col items-center">
-
-    <div id="error-toast" class="toast fixed bottom-8 bg-white border border-red-200 p-4 rounded-xl shadow-lg flex items-center gap-3 z-50">
-        <span class="text-red-500">❌</span>
-        <p id="error-msg" class="text-sm font-medium text-red-600">Ошибка!</p>
-    </div>
+<body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
 
     <!-- Экран входа -->
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-40">
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
         <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center slide-in">
             <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
             <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4">
             <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
+            <p id="error-text" class="text-red-500 text-sm mt-4 hidden">Неверный пароль!</p>
         </div>
     </div>
 
     <!-- Основной экран -->
-    <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex flex-col items-center gap-6 mt-20">
+    <div id="app-screen" class="hidden w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center gap-6 mt-20">
         <div id="upload-container" class="bg-white/70 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
             <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm">
             <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full">Запустить анализ</button>
@@ -57,47 +51,42 @@
 
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        let savedPass = '';
-
-        function showError(msg) {
-            const toast = document.getElementById('error-toast');
-            document.getElementById('error-msg').innerText = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
+        let savedPass = 'Wb123prof'; // Заранее фиксируем пароль
 
         document.getElementById('login-btn').addEventListener('click', () => {
-            if (document.getElementById('auth-password').value.trim() !== "Wb123prof") return showError("Неправильный пароль!");
-            savedPass = "Wb123prof";
-            document.getElementById('login-screen').classList.add('hidden');
+            const pass = document.getElementById('auth-password').value.trim();
+            if (pass === savedPass) {
+                document.getElementById('login-screen').style.display = 'none';
+            } else {
+                document.getElementById('error-text').classList.remove('hidden');
+            }
         });
 
         document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
-            if (!file) return showError('Выберите файл!');
+            if (!file) return alert('Выберите файл!');
             
             document.getElementById('upload-container').classList.add('fly-away');
             
             const formData = new FormData();
-            formData.append('file', file); formData.append('app_password', savedPass);
+            formData.append('file', file);
+            formData.append('app_password', savedPass);
             
             try {
                 const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
                 const data = await res.json();
-                if (data.error) return showError(data.error);
-
+                
                 document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
                 document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
                 
-                const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
+                const expList = document.getElementById('expenses-list'); 
+                expList.innerHTML = '';
                 for (const [k, v] of Object.entries(data.expenses)) {
                     expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
                 }
-                
                 document.getElementById('results-section').classList.remove('hidden');
                 document.getElementById('results-section').classList.add('flex');
-                document.getElementById('app-screen').classList.remove('hidden');
-            } catch { showError("Ошибка анализа"); }
+            } catch (e) { alert('Ошибка связи: ' + e); }
         });
     </script>
 </body>
