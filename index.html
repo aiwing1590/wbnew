@@ -7,19 +7,28 @@
     <style>
         .coffee-bg { background-color: #6f4e37 !important; }
         #upload-container { transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; z-index: 20; }
-        .fly-away { top: 80px !important; transform: translate(-50%, 0) scale(0.7) !important; opacity: 0; pointer-events: none; }
+        .fly-away { top: 80px !important; transform: translate(-50%, 0) scale(0.7) !important; opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
 
+    <!-- 1. ЭКРАН ВХОДА (Всегда первый) -->
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
+        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
+            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
+            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4">
+            <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
+            <p id="error-text" class="text-red-500 text-sm mt-4 hidden">Неверный пароль!</p>
+        </div>
+    </div>
+
+    <!-- 2. ОСНОВНОЙ ЭКРАН -->
     <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        <!-- Блок загрузки -->
         <div id="upload-container" class="bg-white/90 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
             <input type="file" id="file-uploader" class="w-full text-sm">
             <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full">Запустить анализ</button>
         </div>
 
-        <!-- Статистика и ИИ -->
         <div id="results-section" class="hidden w-full flex-col gap-6 mt-20">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
@@ -29,7 +38,6 @@
                 <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
                 <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
             </div>
-            <!-- ВОЗВРАЩЕННЫЙ БЛОК ИИ -->
             <div id="ai-section" class="bg-white border p-6 rounded-xl shadow-sm">
                 <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
                 <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
@@ -42,11 +50,19 @@
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
         
+        // Логика входа
+        document.getElementById('login-btn').addEventListener('click', () => {
+            if (document.getElementById('auth-password').value.trim() === "Wb123prof") {
+                document.getElementById('login-screen').style.display = 'none';
+            } else {
+                document.getElementById('error-text').classList.remove('hidden');
+            }
+        });
+
+        // Логика анализа
         document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
             if (!file) return alert('Выберите файл!');
-            
-            // Гарантированное улетание
             document.getElementById('upload-container').classList.add('fly-away');
             
             const formData = new FormData();
@@ -56,16 +72,12 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
                 const data = await res.json();
-                
                 document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
                 document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                
-                const expList = document.getElementById('expenses-list'); 
-                expList.innerHTML = '';
+                const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
                 for (const [k, v] of Object.entries(data.expenses)) {
                     expList.innerHTML += `<div>${k}:<br><strong>${Number(v).toLocaleString('ru-RU')} ₽</strong></div>`;
                 }
-                
                 document.getElementById('results-section').classList.remove('hidden');
                 document.getElementById('results-section').classList.add('flex');
             } catch (e) { alert('Ошибка: ' + e); }
@@ -76,12 +88,10 @@
             const file = document.getElementById('file-uploader').files[0];
             const formData = new FormData();
             formData.append('file', file); formData.append('app_password', 'Wb123prof'); formData.append('user_query', q);
-            
             const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
             const data = await res.json();
             const box = document.getElementById('ai-response-box');
-            box.innerText = data.ai_response;
-            box.classList.remove('hidden');
+            box.innerText = data.ai_response; box.classList.remove('hidden');
         });
     </script>
 </body>
