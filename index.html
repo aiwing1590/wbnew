@@ -7,8 +7,6 @@
     <style>
         .coffee-bg { background-color: #6f4e37 !important; }
         .coffee-hover:hover { background-color: #5a3e2d !important; }
-        /* Плавное исчезновение */
-        .fade-out { transition: opacity 0.5s ease; opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
@@ -25,12 +23,14 @@
 
     <!-- ОСНОВНОЙ ЭКРАН -->
     <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        <!-- Блок загрузки теперь в потоке документа, а не fixed -->
-        <div id="upload-container" class="bg-white border rounded-2xl p-8 shadow-sm flex flex-col items-center gap-4 w-full max-w-lg">
+        <!-- Блок загрузки -->
+        <div id="upload-container" class="bg-white border rounded-2xl p-8 shadow-sm flex flex-col items-center gap-4 w-full max-w-lg mt-10">
+            <h2 class="font-serif text-xl">Загрузка отчета</h2>
             <input type="file" id="file-uploader" class="w-full text-sm">
             <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full coffee-hover">Запустить анализ</button>
         </div>
 
+        <!-- Результаты и ИИ -->
         <div id="results-section" class="hidden w-full flex-col gap-6 mt-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
@@ -64,9 +64,6 @@
             const file = document.getElementById('file-uploader').files[0];
             if (!file) return alert('Выберите файл!');
             
-            // Просто растворяем блок загрузки
-            document.getElementById('upload-container').classList.add('fade-out');
-            
             const formData = new FormData();
             formData.append('file', file);
             formData.append('app_password', 'Wb123prof');
@@ -74,14 +71,19 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
                 const data = await res.json();
+                
+                // Наполняем данными
                 document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
                 document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
                 const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
                 for (const [k, v] of Object.entries(data.expenses)) {
                     expList.innerHTML += `<div>${k}:<br><strong>${Number(v).toLocaleString('ru-RU')} ₽</strong></div>`;
                 }
-                // После задержки совсем убираем блок загрузки, чтобы не занимал место
-                setTimeout(() => { document.getElementById('upload-container').style.display = 'none'; }, 500);
+
+                // Полностью скрываем блок загрузки физически, чтобы он пропал
+                document.getElementById('upload-container').style.display = 'none';
+                
+                // Показываем результаты
                 document.getElementById('results-section').classList.remove('hidden');
                 document.getElementById('results-section').classList.add('flex');
             } catch (e) { alert('Ошибка: ' + e); }
