@@ -4,100 +4,67 @@
     <meta charset="UTF-8">
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .coffee-bg { background-color: #6f4e37 !important; }
-        .coffee-hover:hover { background-color: #5a3e2d !important; }
-    </style>
 </head>
 <body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
 
-    <!-- ЭКРАН ВХОДА -->
+    <!-- Экран входа -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
         <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
             <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
             <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4">
-            <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
-            <p id="error-text" class="text-red-500 text-sm mt-4 hidden">Неверный пароль!</p>
+            <button id="login-btn" class="w-full bg-[#6f4e37] text-white rounded-xl py-3">Войти</button>
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ ЭКРАН -->
-    <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        <!-- Блок загрузки -->
-        <div id="upload-container" class="bg-white border rounded-2xl p-8 shadow-sm flex flex-col items-center gap-4 w-full max-w-lg mt-10">
-            <h2 class="font-serif text-xl">Загрузка отчета</h2>
-            <input type="file" id="file-uploader" class="w-full text-sm">
-            <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full coffee-hover">Запустить анализ</button>
+    <!-- Основной экран -->
+    <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12">
+        <div id="upload-container" class="bg-white border rounded-2xl p-8 shadow-sm">
+            <input type="file" id="file-uploader" class="w-full mb-4">
+            <button id="submit-btn" class="bg-[#6f4e37] text-white px-8 py-3 rounded-full w-full">Анализ</button>
         </div>
-
-        <!-- Результаты и ИИ -->
-        <div id="results-section" class="hidden w-full flex-col gap-6 mt-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
-                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
-            </div>
-            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm">
-                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
-                <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
-            </div>
-            <div id="ai-section" class="bg-white border p-6 rounded-xl shadow-sm">
-                <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
-                <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
-                <button id="ask-btn" class="coffee-bg text-white px-6 py-2 rounded-lg coffee-hover">Спросить</button>
-                <div id="ai-response-box" class="mt-4 p-4 bg-stone-50 rounded-lg border text-sm hidden"></div>
-            </div>
+        
+        <div id="results-section" class="hidden mt-8 grid grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-xl border">Выручка: <div id="rev" class="text-xl font-bold">0 ₽</div></div>
+            <div class="bg-white p-5 rounded-xl border">Прибыль: <div id="prof" class="text-xl font-bold">0 ₽</div></div>
+            <div id="exp-list" class="col-span-2 bg-white p-5 rounded-xl border"></div>
         </div>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        
         document.getElementById('login-btn').addEventListener('click', () => {
-            if (document.getElementById('auth-password').value.trim() === "Wb123prof") {
+            if (document.getElementById('auth-password').value === "Wb123prof") {
                 document.getElementById('login-screen').style.display = 'none';
-            } else {
-                document.getElementById('error-text').classList.remove('hidden');
-            }
+            } else { alert("Неверный пароль!"); }
         });
 
         document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
-            if (!file) return alert('Выберите файл!');
+            if (!file) return alert('Файл не выбран!');
             
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', 'Wb123prof');
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('app_password', 'Wb123prof');
             
             try {
-                const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const data = await res.json();
+                const res = await fetch('https://wbagent-real.onrender.com/analyze', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error('Ошибка сервера');
+                const d = await res.json();
                 
-                // Наполняем данными
-                document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
-                document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                const expList = document.getElementById('expenses-list'); expList.innerHTML = '';
-                for (const [k, v] of Object.entries(data.expenses)) {
-                    expList.innerHTML += `<div>${k}:<br><strong>${Number(v).toLocaleString('ru-RU')} ₽</strong></div>`;
-                }
-
-                // Полностью скрываем блок загрузки физически, чтобы он пропал
-                document.getElementById('upload-container').style.display = 'none';
+                // ЗАЩИТА ОТ ТВОЕЙ ОШИБКИ: проверяем, что данные пришли
+                if (!d || d.error) throw new Error(d.error || 'Пустой ответ');
                 
-                // Показываем результаты
+                document.getElementById('rev').innerText = (d.total_revenue || 0).toLocaleString() + ' ₽';
+                document.getElementById('prof').innerText = (d.net_profit || 0).toLocaleString() + ' ₽';
+                
+                const exp = document.getElementById('exp-list');
+                exp.innerHTML = '<strong>Расходы:</strong><br>';
+                // Безопасная проверка объекта расходов
+                const exps = d.expenses || {};
+                for (let k in exps) { exp.innerHTML += `${k}: ${exps[k].toLocaleString()} ₽<br>`; }
+                
                 document.getElementById('results-section').classList.remove('hidden');
-                document.getElementById('results-section').classList.add('flex');
-            } catch (e) { alert('Ошибка: ' + e); }
-        });
-
-        document.getElementById('ask-btn').addEventListener('click', async () => {
-            const q = document.getElementById('query-input').value;
-            const file = document.getElementById('file-uploader').files[0];
-            const formData = new FormData();
-            formData.append('file', file); formData.append('app_password', 'Wb123prof'); formData.append('user_query', q);
-            const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-            const data = await res.json();
-            const box = document.getElementById('ai-response-box');
-            box.innerText = data.ai_response; box.classList.remove('hidden');
+                document.getElementById('upload-container').style.display = 'none';
+            } catch (e) { alert('Ошибка: ' + e.message); }
         });
     </script>
 </body>
