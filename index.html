@@ -42,46 +42,62 @@
         </div>
     </div>
 
-    <script>
-        const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        
-        // Вход
-        document.getElementById('login-btn').addEventListener('click', () => {
-            if (document.getElementById('auth-password').value.trim() === "Wb123prof") {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-screen').style.opacity = '1';
-            } else {
-                document.getElementById('error-text').classList.remove('hidden');
-            }
-        });
+   <script>
+    const BACKEND_URL = 'https://wbagent-real.onrender.com';
+    let savedPass = 'Wb123prof';
 
-        // Анализ
-        document.getElementById('submit-btn').addEventListener('click', async () => {
-            const file = document.getElementById('file-uploader').files[0];
-            if (!file) return alert('Выберите файл!');
+    document.getElementById('login-btn').addEventListener('click', () => {
+        if (document.getElementById('auth-password').value.trim() === savedPass) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.opacity = '1';
+        } else {
+            alert("Неверный пароль!");
+        }
+    });
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+        const file = document.getElementById('file-uploader').files[0];
+        if (!file) return alert('Выберите файл!');
+        
+        document.getElementById('upload-container').classList.add('fly-away');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('app_password', savedPass);
+        
+        try {
+            const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
             
-            document.getElementById('upload-container').classList.add('fly-away');
+            // Проверяем, ответил ли сервер вообще
+            if (!res.ok) throw new Error('Сервер не ответил');
             
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', 'Wb123prof');
+            const data = await res.json();
             
-            try {
-                const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const data = await res.json();
-                
-                document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
-                document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                
-                const expList = document.getElementById('expenses-list'); 
-                expList.innerHTML = '';
-                for (const [k, v] of Object.entries(data.expenses)) {
-                    expList.innerHTML += `<div>${k}:<br><strong>${v.toLocaleString('ru-RU')} ₽</strong></div>`;
-                }
-                document.getElementById('results-section').classList.remove('hidden');
-                document.getElementById('results-section').classList.add('flex');
-            } catch (e) { alert('Ошибка: ' + e); }
-        });
-    </script>
+            // ПРОВЕРКА: если сервер вернул ошибку
+            if (data.error) throw new Error(data.error);
+            
+            // ПРОВЕРКА: если данных нет
+            if (!data.expenses) throw new Error('Данные не распознаны');
+
+            // Заполнение UI
+            document.getElementById('revenue-val').innerText = Number(data.total_revenue || 0).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('profit-val').innerText = Number(data.net_profit || 0).toLocaleString('ru-RU') + ' ₽';
+            
+            const expList = document.getElementById('expenses-list'); 
+            expList.innerHTML = '';
+            
+            // Рисуем расходы только если они есть
+            for (const [k, v] of Object.entries(data.expenses)) {
+                expList.innerHTML += `<div>${k}:<br><strong>${Number(v || 0).toLocaleString('ru-RU')} ₽</strong></div>`;
+            }
+            
+            document.getElementById('results-section').style.display = 'flex';
+        } catch (e) {
+            alert('Ошибка при анализе: ' + e.message);
+            // Возвращаем кнопку выбора, если упали
+            document.getElementById('upload-container').classList.remove('fly-away');
+        }
+    });
+</script>
 </body>
 </html>
