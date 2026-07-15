@@ -5,15 +5,8 @@
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-in { opacity: 0; animation: slideIn 0.6s ease forwards; }
-        .delay-1 { animation-delay: 0.2s; }
-        .delay-2 { animation-delay: 0.4s; }
-        .delay-3 { animation-delay: 0.6s; }
-        
         .coffee-bg { background-color: #6f4e37 !important; }
         .coffee-hover:hover { background-color: #5a3e2d !important; }
-        
         #upload-container { transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; z-index: 20; }
         .fly-away { top: 120px !important; transform: translate(-50%, 0) scale(0.8) !important; opacity: 0.5; }
     </style>
@@ -22,7 +15,7 @@
 
     <!-- Экран входа -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
-        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center slide-in">
+        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
             <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
             <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4">
             <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
@@ -30,19 +23,19 @@
         </div>
     </div>
 
-    <!-- Основной экран -->
-    <div id="app-screen" class="hidden w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center gap-6 mt-20">
+    <!-- Основной экран (изначально пустой, но активный) -->
+    <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center gap-6 mt-20 opacity-0 transition-opacity duration-1000">
         <div id="upload-container" class="bg-white/70 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
-            <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm">
+            <input type="file" id="file-uploader" accept=".xlsx" class="w-full text-sm text-stone-500">
             <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full">Запустить анализ</button>
         </div>
 
         <div id="results-section" class="hidden w-full flex-col gap-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white border p-5 rounded-xl shadow-sm slide-in delay-1"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
-                <div class="bg-white border p-5 rounded-xl shadow-sm slide-in delay-2"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
+                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
             </div>
-            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm slide-in delay-3">
+            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm">
                 <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
                 <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
             </div>
@@ -51,17 +44,18 @@
 
     <script>
         const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        let savedPass = 'Wb123prof'; // Заранее фиксируем пароль
-
+        
+        // Вход
         document.getElementById('login-btn').addEventListener('click', () => {
-            const pass = document.getElementById('auth-password').value.trim();
-            if (pass === savedPass) {
+            if (document.getElementById('auth-password').value.trim() === "Wb123prof") {
                 document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.opacity = '1';
             } else {
                 document.getElementById('error-text').classList.remove('hidden');
             }
         });
 
+        // Анализ
         document.getElementById('submit-btn').addEventListener('click', async () => {
             const file = document.getElementById('file-uploader').files[0];
             if (!file) return alert('Выберите файл!');
@@ -70,7 +64,7 @@
             
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('app_password', savedPass);
+            formData.append('app_password', 'Wb123prof');
             
             try {
                 const res = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
@@ -86,7 +80,7 @@
                 }
                 document.getElementById('results-section').classList.remove('hidden');
                 document.getElementById('results-section').classList.add('flex');
-            } catch (e) { alert('Ошибка связи: ' + e); }
+            } catch (e) { alert('Ошибка: ' + e); }
         });
     </script>
 </body>
