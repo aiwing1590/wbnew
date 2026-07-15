@@ -37,7 +37,7 @@
 </head>
 <body class="bg-claudeBg text-claudeText font-sans min-h-screen flex flex-col items-center">
 
-    <!-- 1. ЭКРАН ВХОДА (Виден сразу) -->
+    <!-- 1. ЭКРАН ВХОДА -->
     <div id="login-screen" class="flex-grow flex items-center justify-center w-full px-4">
         <div class="bg-claudeCard border border-claudeBorder rounded-xl p-8 shadow-sm max-w-sm w-full text-center">
             <h1 class="font-serif text-3xl mb-2">WB AI Agent</h1>
@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <!-- 2. ОСНОВНОЙ ЭКРАН ПРИЛОЖЕНИЯ (Скрыт до ввода пароля) -->
+    <!-- 2. ОСНОВНОЙ ЭКРАН ПРИЛОЖЕНИЯ -->
     <div id="app-screen" class="hidden w-full max-w-4xl px-4 py-12 flex-col gap-6">
         
         <header class="text-center mb-4">
@@ -65,16 +65,14 @@
             </button>
         </div>
 
-        <!-- Лоадер (Скрыт) -->
+        <!-- Лоадер -->
         <div id="loader" class="hidden flex flex-col items-center justify-center py-8 gap-3">
             <div class="spinner"></div>
             <p class="text-stone-500 text-sm">Агент изучает данные...</p>
         </div>
 
-        <!-- Секция результатов (Скрыта) -->
+        <!-- Секция результатов -->
         <div id="results-section" class="hidden flex-col gap-6">
-            
-            <!-- Метрики -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-claudeCard border border-claudeBorder p-5 rounded-xl shadow-sm">
                     <div class="text-xs text-stone-500 uppercase tracking-wider mb-1">Выручка</div>
@@ -90,23 +88,19 @@
                 </div>
             </div>
 
-            <!-- ИИ Чат -->
             <div class="bg-claudeCard border border-claudeBorder p-6 rounded-xl shadow-sm flex flex-col gap-4">
                 <h3 class="font-serif text-xl">Спросить ИИ-агента</h3>
                 <div class="flex gap-2">
                     <input type="text" id="query-input" placeholder="Задайте вопрос по отчету..." class="flex-grow border border-claudeBorder rounded-lg px-4 py-2 focus:outline-none focus:border-stone-400">
                     <button id="ask-btn" class="bg-stone-100 border border-claudeBorder text-claudeText px-6 py-2 rounded-lg hover:bg-stone-200 transition-colors font-medium">Спросить</button>
                 </div>
-                <!-- Ответ ИИ -->
                 <div id="ai-response-box" class="hidden mt-2 text-stone-700 leading-relaxed text-sm p-4 bg-stone-50 rounded-lg border border-claudeBorder whitespace-pre-line"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // === ТВОЯ ССЫЛКА НА БЭКЕНД ===
         const BACKEND_URL = 'https://wbagent-y5z6.onrender.com';
-
         let savedPassword = '';
 
         const loginScreen = document.getElementById('login-screen');
@@ -121,25 +115,19 @@
         const queryInput = document.getElementById('query-input');
         const askBtn = document.getElementById('ask-btn');
 
-        // 1. ЛОГИКА ВХОДА (Скрываем окно входа, открываем сайт)
         loginBtn.addEventListener('click', () => {
             const pass = authPassword.value.trim();
-            if (!pass) {
-                alert('Пожалуйста, введите пароль.');
-                return;
-            }
-            savedPassword = pass; // Сохраняем пароль в памяти браузера
+            if (!pass) return alert('Пожалуйста, введите пароль.');
+            savedPassword = pass; 
             loginScreen.classList.add('hidden');
             appScreen.classList.remove('hidden');
             appScreen.classList.add('flex');
         });
 
-        // Вход по клавише Enter
         authPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') loginBtn.click();
         });
 
-        // 2. ОТПРАВКА ДАННЫХ
         submitBtn.addEventListener('click', () => sendRequest());
         askBtn.addEventListener('click', () => {
             if (!queryInput.value.trim()) return alert('Введите вопрос!');
@@ -155,22 +143,16 @@
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('app_password', savedPassword); // Подшиваем сохраненный пароль к файлу
+            formData.append('app_password', savedPassword); 
             if (userQuery) formData.append('user_query', userQuery);
 
             try {
                 const response = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                
-                // Проверка на жесткую ошибку сервера (например, если нет библиотеки openpyxl)
-                if (!response.ok) {
-                    throw new Error('Сервер упал при обработке файла.');
-                }
-
+                if (!response.ok) throw new Error('Сервер упал при обработке файла.');
                 const data = await response.json();
 
                 if (data.error) {
                     alert(`Ошибка: ${data.error}`);
-                    // Если пароль не подошел - выкидываем обратно на экран логина
                     if (data.error.toLowerCase().includes('пароль')) {
                         appScreen.classList.add('hidden');
                         appScreen.classList.remove('flex');
@@ -192,9 +174,9 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('Произошла критическая ошибка на сервере Render. Проверь логи (вкладка Logs) на сайте Render.com!');
+                alert('Произошла ошибка на сервере Render. Проверь логи!');
             } finally {
-                loader.classList.add('hidden'); // Убираем бесконечный лоадер
+                loader.classList.add('hidden'); 
             }
         }
     </script>
