@@ -4,164 +4,32 @@
     <meta charset="UTF-8">
     <title>WB AI Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Оставляю всё как есть, никаких сокращений */
-        .coffee-bg { background-color: #6f4e37 !important; }
-        .coffee-hover:hover { background-color: #5a3e2d !important; }
-        
-        #upload-container { 
-            transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); 
-            position: fixed; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 90%; max-width: 500px; 
-            z-index: 20; 
-        }
-        
-        .fly-away { 
-            top: 80px !important; 
-            transform: translate(-50%, 0) scale(0.7) !important; 
-            opacity: 0.5; 
-            z-index: 1 !important; 
-        }
-    </style>
 </head>
-<body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
-
-    <!-- ЭКРАН ВХОДА - ПОЛНЫЙ БЛОК -->
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
-        <div class="bg-white border rounded-2xl p-10 shadow-sm max-w-sm w-full text-center">
-            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
-            <input type="password" id="auth-password" placeholder="Пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4">
-            <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all">Войти</button>
-            <p id="error-text" class="text-red-500 text-sm mt-4 hidden">Неверный пароль!</p>
-        </div>
+<body class="bg-gray-100 p-5">
+    <div id="app" class="max-w-lg mx-auto bg-white p-6 rounded-xl shadow">
+        <h1 class="text-xl font-bold mb-4">WB AI Agent</h1>
+        <input type="password" id="pass" class="border p-2 w-full mb-2" placeholder="Пароль">
+        <input type="file" id="file" class="w-full mb-2">
+        <button id="run" class="bg-black text-white px-4 py-2 w-full">Анализ</button>
+        <div id="res" class="mt-4 p-4 bg-gray-50 rounded hidden"></div>
     </div>
 
-    <!-- ОСНОВНОЙ ЭКРАН - ПОЛНАЯ СТРУКТУРА -->
-    <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        
-        <!-- Блок загрузки -->
-        <div id="upload-container" class="bg-white/90 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-4">
-            <h2 class="text-lg font-bold">Выберите файл отчета</h2>
-            <input type="file" id="file-uploader" class="w-full text-sm">
-            <button id="submit-btn" class="coffee-bg text-white px-8 py-3 rounded-full w-full coffee-hover">Запустить анализ</button>
-        </div>
-
-        <!-- Секция результатов -->
-        <div id="results-section" class="hidden w-full flex-col gap-6 mt-20">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Выручка</div><div id="revenue-val" class="text-2xl font-serif">0 ₽</div></div>
-                <div class="bg-white border p-5 rounded-xl shadow-sm"><div class="text-xs uppercase text-stone-500">Чистая прибыль</div><div id="profit-val" class="text-2xl font-serif">0 ₽</div></div>
-            </div>
-            
-            <div id="expenses-section" class="bg-white border rounded-xl p-6 shadow-sm">
-                <h3 class="font-serif text-xl mb-4">Детальные расходы</h3>
-                <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"></div>
-            </div>
-
-            <!-- Секция ИИ -->
-            <div id="ai-section" class="bg-white border p-6 rounded-xl shadow-sm">
-                <h3 class="font-serif text-xl mb-4">Спросить ИИ</h3>
-                <input type="text" id="query-input" class="w-full border rounded-lg px-4 py-2 mb-2" placeholder="Ваш вопрос...">
-                <button id="ask-btn" class="coffee-bg text-white px-6 py-2 rounded-lg coffee-hover">Спросить</button>
-                <div id="ai-response-box" class="mt-4 p-4 bg-stone-50 rounded-lg border text-sm hidden"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ПОЛНЫЙ СКРИПТ, БЕЗ СОКРАЩЕНИЙ -->
     <script>
-        const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const password = document.getElementById('auth-password').value.trim();
-            if (password === "Wb123prof") {
-                document.getElementById('login-screen').style.display = 'none';
-            } else {
-                document.getElementById('error-text').classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('submit-btn').addEventListener('click', async () => {
-            const fileInput = document.getElementById('file-uploader');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('Выберите файл!');
-                return;
-            }
-            
-            // Запускаем анимацию улета
-            document.getElementById('upload-container').classList.add('fly-away');
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', 'Wb123prof');
+        document.getElementById('run').onclick = async () => {
+            const fd = new FormData();
+            fd.append('file', document.getElementById('file').files[0]);
+            fd.append('app_password', document.getElementById('pass').value);
             
             try {
-                const response = await fetch(`${BACKEND_URL}/analyze`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert('Ошибка сервера: ' + data.error);
-                    document.getElementById('upload-container').classList.remove('fly-away');
-                    return;
+                const res = await fetch('https://wbagent-real.onrender.com/analyze', { method: 'POST', body: fd });
+                const d = await res.json();
+                if(d.error) alert(d.error);
+                else {
+                    document.getElementById('res').innerHTML = `Выручка: ${d.total_revenue} ₽<br>Прибыль: ${d.net_profit} ₽`;
+                    document.getElementById('res').classList.remove('hidden');
                 }
-                
-                // Заполняем данные
-                document.getElementById('revenue-val').innerText = Number(data.total_revenue).toLocaleString('ru-RU') + ' ₽';
-                document.getElementById('profit-val').innerText = Number(data.net_profit).toLocaleString('ru-RU') + ' ₽';
-                
-                const expList = document.getElementById('expenses-list');
-                expList.innerHTML = '';
-                for (const [key, value] of Object.entries(data.expenses)) {
-                    expList.innerHTML += `<div>${key}:<br><strong>${Number(value).toLocaleString('ru-RU')} ₽</strong></div>`;
-                }
-                
-                // Показываем результаты
-                document.getElementById('results-section').classList.remove('hidden');
-                document.getElementById('results-section').classList.add('flex');
-                
-            } catch (error) {
-                alert('Ошибка соединения: ' + error);
-                document.getElementById('upload-container').classList.remove('fly-away');
-            }
-        });
-
-        document.getElementById('ask-btn').addEventListener('click', async () => {
-            const query = document.getElementById('query-input').value;
-            const file = document.getElementById('file-uploader').files[0];
-            
-            if (!file) {
-                alert('Сначала загрузите файл!');
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', 'Wb123prof');
-            formData.append('user_query', query);
-            
-            try {
-                const response = await fetch(`${BACKEND_URL}/analyze`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                const box = document.getElementById('ai-response-box');
-                
-                box.innerText = data.ai_response || 'Нет ответа от ИИ.';
-                box.classList.remove('hidden');
-                
-            } catch (error) {
-                alert('Ошибка ИИ: ' + error);
-            }
-        });
+            } catch(e) { alert("Ошибка подключения к серверу: " + e.message); }
+        };
     </script>
 </body>
 </html>
