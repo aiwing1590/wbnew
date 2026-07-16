@@ -2,204 +2,1002 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>WB AI Agent</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        .coffee-bg { background-color: #6f4e37 !important; }
-        .coffee-hover:hover { background-color: #5a3e2d !important; }
-        
-        /* Плавное исчезновение блока загрузки */
-        .fade-out { 
-            opacity: 0; 
-            pointer-events: none; 
-            transition: opacity 0.5s ease; 
+        body {
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(111, 78, 55, 0.10),
+                    transparent 35%
+                ),
+                #f4f4f0;
+        }
+
+        .coffee-bg {
+            background-color: #6f4e37;
+        }
+
+        .coffee-bg:hover {
+            background-color: #5a3e2d;
+        }
+
+        .coffee-text {
+            color: #6f4e37;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition:
+                opacity 0.4s ease,
+                transform 0.4s ease;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.35);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ai-answer {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
     </style>
 </head>
-<body class="bg-[#f4f4f0] text-[#2d2d2d] font-sans min-h-screen">
 
-    <!-- 1. ЭКРАН ВХОДА С ПАРОЛЕМ -->
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50">
-        <div class="bg-white border rounded-2xl p-10 shadow-xl max-w-sm w-full text-center">
-            <h1 class="font-serif text-3xl mb-8">WB AI Agent</h1>
-            <input type="password" id="auth-password" placeholder="Введите пароль" class="w-full border rounded-xl px-4 py-3 text-center mb-4 focus:outline-none focus:ring-2 focus:ring-[#6f4e37]">
-            <button id="login-btn" class="w-full coffee-bg text-white rounded-xl py-3 hover:bg-black transition-all font-bold">Войти</button>
-            <p id="error-text" class="text-red-500 text-sm mt-4 hidden">Неверный пароль!</p>
+<body class="text-[#2d2d2d] font-sans min-h-screen">
+
+    <!-- ЭКРАН ВХОДА -->
+    <div
+        id="login-screen"
+        class="fixed inset-0 flex items-center justify-center bg-[#f4f4f0] z-50 px-4"
+    >
+        <div class="bg-white border border-stone-200 rounded-3xl p-8 md:p-10 shadow-xl max-w-sm w-full text-center">
+
+            <div class="w-16 h-16 coffee-bg rounded-2xl mx-auto mb-5 flex items-center justify-center text-white text-3xl">
+                ✦
+            </div>
+
+            <h1 class="font-serif text-3xl mb-2">
+                WB AI Agent
+            </h1>
+
+            <p class="text-stone-500 text-sm mb-7">
+                Финансовый аналитик отчётов Wildberries
+            </p>
+
+            <input
+                type="password"
+                id="auth-password"
+                placeholder="Введите пароль"
+                autocomplete="current-password"
+                class="w-full border border-stone-300 rounded-xl px-4 py-3 text-center mb-4 focus:outline-none focus:ring-2 focus:ring-[#6f4e37]"
+            >
+
+            <button
+                id="login-btn"
+                type="button"
+                class="w-full coffee-bg text-white rounded-xl py-3 transition-all font-bold flex items-center justify-center gap-3"
+            >
+                <span id="login-btn-text">Войти</span>
+                <span id="login-spinner" class="spinner hidden"></span>
+            </button>
+
+            <p
+                id="login-status"
+                class="text-stone-500 text-sm mt-4"
+            >
+                При первом входе сервер Render может просыпаться до минуты.
+            </p>
+
+            <p
+                id="login-error"
+                class="text-red-600 text-sm mt-4 hidden"
+            ></p>
+
         </div>
     </div>
 
-    <!-- 2. ОСНОВНОЙ ЭКРАН -->
-    <div id="app-screen" class="w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        
-        <!-- Блок загрузки файла -->
-        <div id="upload-container" class="bg-white/90 backdrop-blur-md border rounded-2xl p-8 shadow-xl flex flex-col items-center gap-6 w-full max-w-lg mt-10 transition-all">
-            <h2 class="font-serif text-2xl text-center">Загрузка отчета WB</h2>
-            <input type="file" id="file-uploader" class="w-full text-sm border p-3 rounded-xl cursor-pointer" accept=".xlsx, .xls">
-            <button id="submit-btn" class="coffee-bg text-white px-8 py-4 rounded-full w-full coffee-hover font-bold text-lg shadow-md transition-all">Запустить анализ</button>
-            <p id="upload-error" class="text-red-500 text-sm hidden text-center"></p>
-        </div>
 
-        <!-- Блок результатов -->
-        <div id="results-section" class="hidden w-full flex-col gap-6 mt-8">
-            
-            <!-- Выручка и Прибыль -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white border p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">Выручка</div>
-                    <div id="revenue-val" class="text-3xl font-serif text-green-700">0 ₽</div>
-                </div>
-                <div class="bg-white border p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">Чистая прибыль</div>
-                    <div id="profit-val" class="text-3xl font-serif text-blue-700">0 ₽</div>
-                </div>
-            </div>
-            
-            <!-- Детальные расходы -->
-            <div id="expenses-section" class="bg-white border rounded-2xl p-8 shadow-sm">
-                <h3 class="font-serif text-2xl mb-6 border-b pb-4">Детальные расходы</h3>
-                <div id="expenses-list" class="grid grid-cols-2 md:grid-cols-3 gap-6 text-base">
-                </div>
+    <!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+    <main
+        id="app-screen"
+        class="w-full max-w-5xl mx-auto px-4 py-8 md:py-12"
+    >
+
+        <!-- ШАПКА -->
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+
+            <div>
+                <p class="coffee-text font-bold text-sm uppercase tracking-widest mb-1">
+                    Финансовая аналитика
+                </p>
+
+                <h1 class="font-serif text-3xl md:text-4xl">
+                    WB AI Agent
+                </h1>
             </div>
 
-            <!-- Секция ИИ -->
-            <div id="ai-section" class="bg-white border p-8 rounded-2xl shadow-sm mt-4">
-                <h3 class="font-serif text-2xl mb-2">Спросить ИИ-аналитика</h3>
-                <p class="text-stone-500 text-sm mb-6">Задайте вопрос по отчету (например: "Какая у меня прибыль?")</p>
-                
-                <div class="flex gap-4 mb-4">
-                    <input type="text" id="query-input" class="w-full border rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#6f4e37]" placeholder="Введите ваш вопрос...">
-                    <button id="ask-btn" class="coffee-bg text-white px-8 py-3 rounded-xl coffee-hover font-bold transition-all whitespace-nowrap">Спросить</button>
-                </div>
-                
-                <div id="ai-response-box" class="mt-4 p-5 bg-stone-50 rounded-xl border text-base hidden leading-relaxed"></div>
-            </div>
-        </div>
-    </div>
+            <button
+                id="logout-btn"
+                type="button"
+                class="hidden border border-stone-300 bg-white px-5 py-2 rounded-xl hover:bg-stone-100 transition"
+            >
+                Выйти
+            </button>
 
-    <!-- 3. СКРИПТЫ И ЛОГИКА -->
+        </header>
+
+
+        <!-- БЛОК ЗАГРУЗКИ -->
+        <section
+            id="upload-container"
+            class="bg-white border border-stone-200 rounded-3xl p-6 md:p-8 shadow-lg transition-all"
+        >
+
+            <div class="max-w-xl mx-auto text-center">
+
+                <div class="text-5xl mb-4">
+                    📊
+                </div>
+
+                <h2 class="font-serif text-2xl md:text-3xl mb-3">
+                    Загрузите отчёт WB
+                </h2>
+
+                <p class="text-stone-500 mb-6">
+                    Поддерживаются Excel-файлы формата .xlsx и .xls
+                </p>
+
+                <input
+                    type="file"
+                    id="file-uploader"
+                    accept=".xlsx,.xls"
+                    class="block w-full text-sm border border-stone-300 bg-stone-50 p-4 rounded-xl cursor-pointer mb-5"
+                >
+
+                <button
+                    id="submit-btn"
+                    type="button"
+                    class="coffee-bg text-white px-8 py-4 rounded-xl w-full font-bold text-lg shadow-md transition-all flex items-center justify-center gap-3"
+                >
+                    <span id="submit-btn-text">
+                        Запустить анализ
+                    </span>
+
+                    <span
+                        id="submit-spinner"
+                        class="spinner hidden"
+                    ></span>
+                </button>
+
+                <p
+                    id="upload-error"
+                    class="text-red-600 text-sm hidden text-center mt-4"
+                ></p>
+
+            </div>
+
+        </section>
+
+
+        <!-- РЕЗУЛЬТАТЫ -->
+        <section
+            id="results-section"
+            class="hidden flex-col gap-6"
+        >
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                <div>
+                    <p class="text-green-700 font-bold">
+                        ✓ Отчёт успешно обработан
+                    </p>
+
+                    <p
+                        id="file-name"
+                        class="text-stone-500 text-sm mt-1"
+                    ></p>
+                </div>
+
+                <button
+                    id="new-report-btn"
+                    type="button"
+                    class="border border-stone-300 bg-white px-5 py-2 rounded-xl hover:bg-stone-100 transition"
+                >
+                    Загрузить другой отчёт
+                </button>
+
+            </div>
+
+
+            <!-- ОСНОВНЫЕ ПОКАЗАТЕЛИ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <div class="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">
+                        Выручка
+                    </div>
+
+                    <div
+                        id="revenue-val"
+                        class="text-2xl font-serif text-green-700"
+                    >
+                        0 ₽
+                    </div>
+                </div>
+
+                <div class="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">
+                        Расходы
+                    </div>
+
+                    <div
+                        id="expenses-total-val"
+                        class="text-2xl font-serif text-red-700"
+                    >
+                        0 ₽
+                    </div>
+                </div>
+
+                <div class="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">
+                        Чистая прибыль
+                    </div>
+
+                    <div
+                        id="profit-val"
+                        class="text-2xl font-serif text-blue-700"
+                    >
+                        0 ₽
+                    </div>
+                </div>
+
+                <div class="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                    <div class="text-sm uppercase text-stone-500 font-bold tracking-wider mb-2">
+                        Маржинальность
+                    </div>
+
+                    <div
+                        id="margin-val"
+                        class="text-2xl font-serif coffee-text"
+                    >
+                        —
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- ДЕТАЛЬНЫЕ РАСХОДЫ -->
+            <div class="bg-white border border-stone-200 rounded-2xl p-6 md:p-8 shadow-sm">
+
+                <h3 class="font-serif text-2xl mb-6 border-b border-stone-200 pb-4">
+                    Детальные расходы
+                </h3>
+
+                <div
+                    id="expenses-list"
+                    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                ></div>
+
+                <p
+                    id="no-expenses-message"
+                    class="text-stone-500 hidden"
+                >
+                    В отчёте не найдены известные колонки расходов.
+                </p>
+
+            </div>
+
+
+            <!-- ИИ-АНАЛИТИК -->
+            <div class="bg-white border border-stone-200 p-6 md:p-8 rounded-2xl shadow-sm">
+
+                <div class="flex items-start gap-4 mb-6">
+
+                    <div class="w-12 h-12 coffee-bg rounded-xl flex items-center justify-center text-white text-xl shrink-0">
+                        ✦
+                    </div>
+
+                    <div>
+                        <h3 class="font-serif text-2xl">
+                            Спросить ИИ-аналитика
+                        </h3>
+
+                        <p class="text-stone-500 text-sm mt-1">
+                            Например: «Какая прибыль?», «Какой товар самый выгодный?» или «Что можно улучшить?»
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-3">
+
+                    <input
+                        type="text"
+                        id="query-input"
+                        maxlength="1000"
+                        class="w-full border border-stone-300 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#6f4e37]"
+                        placeholder="Введите вопрос по отчёту..."
+                    >
+
+                    <button
+                        id="ask-btn"
+                        type="button"
+                        class="coffee-bg text-white px-8 py-3 rounded-xl font-bold transition-all whitespace-nowrap flex items-center justify-center gap-3"
+                    >
+                        <span id="ask-btn-text">
+                            Спросить
+                        </span>
+
+                        <span
+                            id="ask-spinner"
+                            class="spinner hidden"
+                        ></span>
+                    </button>
+
+                </div>
+
+                <p
+                    id="question-error"
+                    class="text-red-600 text-sm hidden mt-3"
+                ></p>
+
+                <div
+                    id="ai-response-box"
+                    class="ai-answer mt-6 p-5 bg-stone-50 rounded-xl border border-stone-200 text-base hidden leading-relaxed"
+                ></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
     <script>
-        const BACKEND_URL = 'https://wbagent-real.onrender.com';
-        const APP_PASSWORD = 'Wb123prof';
+        const BACKEND_URL = "https://wbagent-real.onrender.com";
 
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const passwordInput = document.getElementById('auth-password').value.trim();
-            if (passwordInput === APP_PASSWORD) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('error-text').classList.add('hidden');
-            } else {
-                document.getElementById('error-text').classList.remove('hidden');
-            }
-        });
+        let appPassword = "";
+        let selectedFile = null;
 
-        document.getElementById('auth-password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') document.getElementById('login-btn').click();
-        });
 
-        function formatMoney(num) {
-            return Number(num || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
+        // ====================================================
+        // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        // ====================================================
+
+        function showElement(element) {
+            element.classList.remove("hidden");
         }
 
-        document.getElementById('submit-btn').addEventListener('click', async () => {
-            const fileInput = document.getElementById('file-uploader');
-            const uploadError = document.getElementById('upload-error');
-            const file = fileInput.files[0];
-            
-            uploadError.classList.add('hidden');
 
-            if (!file) {
-                uploadError.innerText = 'Пожалуйста, выберите файл перед запуском анализа.';
-                uploadError.classList.remove('hidden');
-                return;
-            }
-            
-            const originalBtnText = document.getElementById('submit-btn').innerText;
-            document.getElementById('submit-btn').innerText = 'Анализирую данные...';
-            document.getElementById('submit-btn').disabled = true;
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', APP_PASSWORD);
-            
-            try {
-                const response = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const responseText = await response.text();
-                
-                let data;
-                try { data = JSON.parse(responseText); } 
-                catch (e) { throw new Error('Ошибка сервера (бэкенд не ответил корректно).'); }
-                
-                if (data.error) throw new Error(data.error);
-                
-                document.getElementById('revenue-val').innerText = formatMoney(data.total_revenue);
-                document.getElementById('profit-val').innerText = formatMoney(data.net_profit);
-                
-                const expList = document.getElementById('expenses-list');
-                expList.innerHTML = '';
-                if (data.expenses) {
-                    for (const [key, value] of Object.entries(data.expenses)) {
-                        expList.innerHTML += `
-                            <div class="flex flex-col">
-                                <span class="text-stone-500 text-sm mb-1">${key}</span>
-                                <strong class="text-lg text-red-800">-${formatMoney(value)}</strong>
-                            </div>`;
-                    }
+        function hideElement(element) {
+            element.classList.add("hidden");
+        }
+
+
+        function setButtonLoading(
+            button,
+            textElement,
+            spinnerElement,
+            isLoading,
+            loadingText,
+            normalText
+        ) {
+            button.disabled = isLoading;
+            button.classList.toggle("opacity-70", isLoading);
+            button.classList.toggle("cursor-not-allowed", isLoading);
+
+            textElement.textContent = isLoading
+                ? loadingText
+                : normalText;
+
+            spinnerElement.classList.toggle(
+                "hidden",
+                !isLoading
+            );
+        }
+
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return number.toLocaleString(
+                "ru-RU",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
                 }
-                
-                document.getElementById('upload-container').classList.add('fade-out');
-                setTimeout(() => {
-                    document.getElementById('upload-container').style.display = 'none';
-                    const resultsSection = document.getElementById('results-section');
-                    resultsSection.classList.remove('hidden');
-                    resultsSection.classList.add('flex');
-                }, 500);
-                
-            } catch (error) {
-                uploadError.innerText = 'Ошибка: ' + error.message;
-                uploadError.classList.remove('hidden');
-            } finally {
-                document.getElementById('submit-btn').innerText = originalBtnText;
-                document.getElementById('submit-btn').disabled = false;
-            }
-        });
+            ) + " ₽";
+        }
 
-        document.getElementById('ask-btn').addEventListener('click', async () => {
-            const query = document.getElementById('query-input').value.trim();
-            const fileInput = document.getElementById('file-uploader');
-            const file = fileInput.files[0];
-            const box = document.getElementById('ai-response-box');
-            
-            if (!query) return;
-            if (!file) {
-                box.innerText = 'Для ответа загрузите файл.';
-                box.classList.remove('hidden');
+
+        async function apiRequest(
+            path,
+            options = {}
+        ) {
+            let response;
+
+            try {
+                response = await fetch(
+                    `${BACKEND_URL}${path}`,
+                    options
+                );
+            } catch (error) {
+                throw new Error(
+                    "Не удалось связаться с сервером. Возможно, Render ещё запускается."
+                );
+            }
+
+            let data;
+
+            try {
+                data = await response.json();
+            } catch (error) {
+                throw new Error(
+                    "Сервер вернул непонятный ответ"
+                );
+            }
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error("Неверный пароль");
+                }
+
+                if (response.status === 413) {
+                    throw new Error("Excel-файл слишком большой");
+                }
+
+                if (response.status === 415) {
+                    throw new Error(
+                        "Нужно выбрать файл .xlsx или .xls"
+                    );
+                }
+
+                throw new Error(
+                    data.detail || "Произошла ошибка сервера"
+                );
+            }
+
+            return data;
+        }
+
+
+        function renderExpenses(expenses = {}) {
+            const container = document.getElementById(
+                "expenses-list"
+            );
+
+            const emptyMessage = document.getElementById(
+                "no-expenses-message"
+            );
+
+            container.replaceChildren();
+
+            const entries = Object.entries(expenses);
+
+            if (entries.length === 0) {
+                showElement(emptyMessage);
                 return;
             }
 
-            const originalAskText = document.getElementById('ask-btn').innerText;
-            document.getElementById('ask-btn').innerText = '...';
-            document.getElementById('ask-btn').disabled = true;
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('app_password', APP_PASSWORD);
-            formData.append('user_query', query);
-            
-            try {
-                const response = await fetch(`${BACKEND_URL}/analyze`, { method: 'POST', body: formData });
-                const data = await response.json();
-                
-                if (data.error) throw new Error(data.error);
-                
-                box.innerText = data.ai_response || 'ИИ не смог сформировать ответ.';
-                box.classList.remove('hidden');
-            } catch (error) {
-                box.innerText = 'Ошибка ИИ: ' + error.message;
-                box.classList.remove('hidden');
-            } finally {
-                document.getElementById('ask-btn').innerText = originalAskText;
-                document.getElementById('ask-btn').disabled = false;
+            hideElement(emptyMessage);
+
+            for (const [name, value] of entries) {
+                const item = document.createElement("div");
+
+                item.className =
+                    "flex flex-col bg-stone-50 border border-stone-200 rounded-xl p-4";
+
+                const label = document.createElement("span");
+
+                label.className =
+                    "text-stone-500 text-sm mb-2";
+
+                label.textContent = name;
+
+                const amount = document.createElement("strong");
+
+                amount.className =
+                    "text-lg text-red-800";
+
+                amount.textContent =
+                    "−" + formatMoney(value);
+
+                item.append(label, amount);
+                container.appendChild(item);
             }
-        });
+        }
+
+
+        function renderReport(data) {
+            document.getElementById(
+                "revenue-val"
+            ).textContent = formatMoney(
+                data.total_revenue
+            );
+
+            document.getElementById(
+                "expenses-total-val"
+            ).textContent = formatMoney(
+                data.total_expenses
+            );
+
+            document.getElementById(
+                "profit-val"
+            ).textContent = formatMoney(
+                data.net_profit
+            );
+
+            const marginElement = document.getElementById(
+                "margin-val"
+            );
+
+            if (
+                data.margin_percent === null ||
+                data.margin_percent === undefined
+            ) {
+                marginElement.textContent = "—";
+            } else {
+                marginElement.textContent =
+                    Number(data.margin_percent)
+                        .toLocaleString("ru-RU") + " %";
+            }
+
+            renderExpenses(data.expenses);
+
+            document.getElementById(
+                "file-name"
+            ).textContent =
+                selectedFile
+                    ? selectedFile.name
+                    : "";
+
+            const uploadContainer = document.getElementById(
+                "upload-container"
+            );
+
+            const resultsSection = document.getElementById(
+                "results-section"
+            );
+
+            uploadContainer.classList.add("fade-out");
+
+            setTimeout(() => {
+                uploadContainer.style.display = "none";
+
+                resultsSection.classList.remove("hidden");
+                resultsSection.classList.add("flex");
+            }, 400);
+        }
+
+
+        // ====================================================
+        // ВХОД
+        // ====================================================
+
+        async function login() {
+            const passwordInput = document.getElementById(
+                "auth-password"
+            );
+
+            const loginError = document.getElementById(
+                "login-error"
+            );
+
+            const loginStatus = document.getElementById(
+                "login-status"
+            );
+
+            const loginButton = document.getElementById(
+                "login-btn"
+            );
+
+            const loginButtonText = document.getElementById(
+                "login-btn-text"
+            );
+
+            const loginSpinner = document.getElementById(
+                "login-spinner"
+            );
+
+            const enteredPassword =
+                passwordInput.value.trim();
+
+            hideElement(loginError);
+
+            if (!enteredPassword) {
+                loginError.textContent =
+                    "Введите пароль";
+
+                showElement(loginError);
+                return;
+            }
+
+            setButtonLoading(
+                loginButton,
+                loginButtonText,
+                loginSpinner,
+                true,
+                "Проверяю...",
+                "Войти"
+            );
+
+            loginStatus.textContent =
+                "Связываюсь с сервером...";
+
+            const formData = new FormData();
+
+            formData.append(
+                "app_password",
+                enteredPassword
+            );
+
+            try {
+                await apiRequest(
+                    "/login",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+                appPassword = enteredPassword;
+                passwordInput.value = "";
+
+                document.getElementById(
+                    "login-screen"
+                ).style.display = "none";
+
+                showElement(
+                    document.getElementById("logout-btn")
+                );
+            } catch (error) {
+                appPassword = "";
+
+                loginError.textContent =
+                    error.message;
+
+                showElement(loginError);
+
+                loginStatus.textContent =
+                    "Проверьте пароль и попробуйте снова.";
+            } finally {
+                setButtonLoading(
+                    loginButton,
+                    loginButtonText,
+                    loginSpinner,
+                    false,
+                    "Проверяю...",
+                    "Войти"
+                );
+            }
+        }
+
+
+        document.getElementById(
+            "login-btn"
+        ).addEventListener(
+            "click",
+            login
+        );
+
+
+        document.getElementById(
+            "auth-password"
+        ).addEventListener(
+            "keydown",
+            event => {
+                if (event.key === "Enter") {
+                    login();
+                }
+            }
+        );
+
+
+        document.getElementById(
+            "logout-btn"
+        ).addEventListener(
+            "click",
+            () => {
+                appPassword = "";
+                selectedFile = null;
+                window.location.reload();
+            }
+        );
+
+
+        // ====================================================
+        // ЗАГРУЗКА И АНАЛИЗ ФАЙЛА
+        // ====================================================
+
+        document.getElementById(
+            "submit-btn"
+        ).addEventListener(
+            "click",
+            async () => {
+                const fileInput = document.getElementById(
+                    "file-uploader"
+                );
+
+                const uploadError = document.getElementById(
+                    "upload-error"
+                );
+
+                const submitButton = document.getElementById(
+                    "submit-btn"
+                );
+
+                const submitButtonText = document.getElementById(
+                    "submit-btn-text"
+                );
+
+                const submitSpinner = document.getElementById(
+                    "submit-spinner"
+                );
+
+                selectedFile = fileInput.files[0];
+
+                hideElement(uploadError);
+
+                if (!selectedFile) {
+                    uploadError.textContent =
+                        "Сначала выберите Excel-файл";
+
+                    showElement(uploadError);
+                    return;
+                }
+
+                if (!appPassword) {
+                    window.location.reload();
+                    return;
+                }
+
+                setButtonLoading(
+                    submitButton,
+                    submitButtonText,
+                    submitSpinner,
+                    true,
+                    "Анализирую...",
+                    "Запустить анализ"
+                );
+
+                const formData = new FormData();
+
+                formData.append(
+                    "file",
+                    selectedFile
+                );
+
+                formData.append(
+                    "app_password",
+                    appPassword
+                );
+
+                try {
+                    const data = await apiRequest(
+                        "/analyze",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+                    renderReport(data);
+                } catch (error) {
+                    uploadError.textContent =
+                        error.message;
+
+                    showElement(uploadError);
+                } finally {
+                    setButtonLoading(
+                        submitButton,
+                        submitButtonText,
+                        submitSpinner,
+                        false,
+                        "Анализирую...",
+                        "Запустить анализ"
+                    );
+                }
+            }
+        );
+
+
+        // ====================================================
+        // ВОПРОС ИИ
+        // ====================================================
+
+        async function askQuestion() {
+            const questionInput = document.getElementById(
+                "query-input"
+            );
+
+            const questionError = document.getElementById(
+                "question-error"
+            );
+
+            const answerBox = document.getElementById(
+                "ai-response-box"
+            );
+
+            const askButton = document.getElementById(
+                "ask-btn"
+            );
+
+            const askButtonText = document.getElementById(
+                "ask-btn-text"
+            );
+
+            const askSpinner = document.getElementById(
+                "ask-spinner"
+            );
+
+            const question = questionInput.value.trim();
+
+            hideElement(questionError);
+
+            if (!question) {
+                questionError.textContent =
+                    "Введите вопрос";
+
+                showElement(questionError);
+                return;
+            }
+
+            if (!selectedFile) {
+                questionError.textContent =
+                    "Сначала загрузите отчёт";
+
+                showElement(questionError);
+                return;
+            }
+
+            setButtonLoading(
+                askButton,
+                askButtonText,
+                askSpinner,
+                true,
+                "Думаю...",
+                "Спросить"
+            );
+
+            answerBox.textContent =
+                "ИИ анализирует данные...";
+
+            showElement(answerBox);
+
+            const formData = new FormData();
+
+            formData.append(
+                "file",
+                selectedFile
+            );
+
+            formData.append(
+                "app_password",
+                appPassword
+            );
+
+            formData.append(
+                "user_query",
+                question
+            );
+
+            try {
+                const data = await apiRequest(
+                    "/analyze",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+                answerBox.textContent =
+                    data.ai_response ||
+                    "ИИ не вернул ответ.";
+            } catch (error) {
+                answerBox.textContent =
+                    "Ошибка: " + error.message;
+            } finally {
+                setButtonLoading(
+                    askButton,
+                    askButtonText,
+                    askSpinner,
+                    false,
+                    "Думаю...",
+                    "Спросить"
+                );
+            }
+        }
+
+
+        document.getElementById(
+            "ask-btn"
+        ).addEventListener(
+            "click",
+            askQuestion
+        );
+
+
+        document.getElementById(
+            "query-input"
+        ).addEventListener(
+            "keydown",
+            event => {
+                if (event.key === "Enter") {
+                    askQuestion();
+                }
+            }
+        );
+
+
+        // ====================================================
+        // ЗАГРУЗИТЬ ДРУГОЙ ОТЧЁТ
+        // ====================================================
+
+        document.getElementById(
+            "new-report-btn"
+        ).addEventListener(
+            "click",
+            () => {
+                selectedFile = null;
+
+                const fileInput = document.getElementById(
+                    "file-uploader"
+                );
+
+                const uploadContainer = document.getElementById(
+                    "upload-container"
+                );
+
+                const resultsSection = document.getElementById(
+                    "results-section"
+                );
+
+                const answerBox = document.getElementById(
+                    "ai-response-box"
+                );
+
+                const questionInput = document.getElementById(
+                    "query-input"
+                );
+
+                fileInput.value = "";
+                questionInput.value = "";
+                answerBox.textContent = "";
+
+                hideElement(answerBox);
+
+                resultsSection.classList.add("hidden");
+                resultsSection.classList.remove("flex");
+
+                uploadContainer.style.display = "block";
+                uploadContainer.classList.remove("fade-out");
+            }
+        );
     </script>
+
 </body>
 </html>
