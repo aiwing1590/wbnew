@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>УМ — аналитика Wildberries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+    <style>
+        body { background:#f5f7fb; }
+        .coffee { background:#1976e9; box-shadow:0 8px 18px rgba(25,118,233,.18); }
+        .coffee:hover { background:#1265ca; }
+        .tab-active { background:#e4f0ff; color:#146bc9; }
+        .spinner { width:20px;height:20px;border:3px solid #ffffff55;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .ai-answer { white-space:pre-wrap; overflow-wrap:anywhere; }
+        th { white-space:nowrap; }
+        .app-card { border-color:#e6ebf2; box-shadow:0 5px 16px rgba(28,53,87,.045); }
+        .metric-card { border-color:#e7edf5; box-shadow:0 3px 12px rgba(28,53,87,.035); }
+        input, select { border-color:#dce5f0 !important; }
+        table thead { color:#64748b; }
+        table tbody tr:hover { background:#f8fbff; }
+        details { border-color:#e1e8f1 !important; }
+        @media (min-width:1024px) {
+            #navigation { border-radius:0; border:0; box-shadow:none; }
+            #navigation .nav-btn { border-radius:10px; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#f4f4f0] px-4">
+        <div class="w-full max-w-sm rounded-3xl border bg-white p-8 text-center shadow-xl">
+            <div class="coffee mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl text-3xl text-white">✦</div>
+            <h1 class="font-serif text-4xl">УМ</h1>
+            <p class="mb-7 mt-2 text-sm text-stone-500">Управление маркетплейсом</p>
+            <input id="auth-password" type="password" placeholder="Введите пароль" class="mb-4 w-full rounded-xl border px-4 py-3 text-center focus:outline-none focus:ring-2 focus:ring-[#6f4e37]">
+            <button id="login-btn" class="coffee flex w-full items-center justify-center gap-3 rounded-xl py-3 font-bold text-white">
+                <span id="login-text">Войти</span><span id="login-spinner" class="spinner hidden"></span>
+            </button>
+            <p id="login-error" class="mt-4 hidden text-sm text-red-600"></p>
+        </div>
+    </div>
+
+    <main class="mx-auto max-w-none px-4 py-6 lg:ml-64 lg:px-10 lg:py-8">
+        <header class="mb-7 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="lg:hidden">
+                <p class="text-xs font-bold uppercase tracking-widest text-[#1976e9]">Wildberries analytics</p>
+                <h1 class="mt-1 font-serif text-4xl text-slate-900">УМ</h1>
+            </div>
+            <button id="logout-btn" class="hidden rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-medium hover:bg-slate-50">Выйти</button>
+        </header>
+
+        <div>
+            <nav id="navigation" class="mb-6 hidden flex flex-row gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:mb-0 lg:w-64 lg:flex-col lg:gap-1 lg:border-r lg:border-slate-200 lg:bg-[#fbfcff] lg:p-5">
+                <div class="hidden border-b border-slate-200 pb-6 lg:block">
+                    <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-xl text-blue-600">✦</div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-blue-600">УМ</p>
+                    <p class="mt-1 text-sm text-slate-500">Управление маркетплейсом</p>
+                </div>
+                <p class="hidden px-3 pt-4 text-xs font-bold uppercase tracking-widest text-slate-400 lg:block">Главное</p>
+                <button class="nav-btn tab-active rounded-xl px-4 py-3 text-left font-bold transition" data-section="analytics"><span class="mr-3 text-base">▥</span>Аналитика</button>
+                <button class="nav-btn rounded-xl px-4 py-3 text-left font-bold transition hover:bg-slate-100" data-section="products"><span class="mr-3 text-base">▦</span>Товары</button>
+                <button class="nav-btn rounded-xl px-4 py-3 text-left font-bold transition hover:bg-slate-100" data-section="spp"><span class="mr-3 text-base">⌁</span>СПП</button>
+                <div class="hidden mt-auto rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs leading-relaxed text-blue-700 lg:block">Отчёты и товары сохраняются в базе УМ.</div>
+            </nav>
+
+            <div class="min-w-0">
+            <section id="section-analytics" class="app-section">
+            <div class="app-card mx-auto max-w-2xl rounded-3xl border bg-white p-8 text-center shadow-lg">
+                <div class="mb-4 text-5xl">📊</div>
+                <h2 class="font-serif text-3xl">Финансовый отчёт</h2>
+                <p class="mb-6 mt-2 text-stone-500">Загрузите Excel для расчёта выручки, расходов и прибыли</p>
+                <input id="analytics-file" type="file" accept=".xlsx,.xls" class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
+                <button id="analytics-btn" class="coffee flex w-full items-center justify-center gap-3 rounded-xl py-4 text-lg font-bold text-white">
+                    <span id="analytics-text">Запустить анализ</span><span id="analytics-spinner" class="spinner hidden"></span>
+                </button>
+                <p id="analytics-error" class="mt-4 hidden text-sm text-red-600"></p>
+            </div>
+            <details id="finance-history" class="mt-6 rounded-2xl border bg-white shadow-sm">
+                <summary class="flex cursor-pointer list-none items-center justify-between p-5 font-bold"><span>Предыдущие финансовые отчёты <span id="finance-history-count" class="ml-2 text-sm font-normal text-stone-400"></span></span><span class="text-stone-400">⌄</span></summary>
+                <div id="finance-history-list" class="border-t p-3"><p class="p-3 text-sm text-stone-500">Загрузка истории…</p></div>
+            </details>
+            <div id="analytics-results" class="mt-6 hidden space-y-6">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Выручка</p><p id="revenue-val" class="mt-2 font-serif text-2xl text-green-700">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Чистая прибыль</p><p id="profit-val" class="mt-2 font-serif text-2xl text-blue-700">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Расходы</p><p id="expenses-val" class="mt-2 font-serif text-2xl text-red-700">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Маржинальность</p><p id="margin-val" class="mt-2 font-serif text-2xl">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">ROI</p><p id="roi-val" class="mt-2 font-serif text-2xl">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Продажи</p><p id="sales-val" class="mt-2 font-serif text-2xl">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Возвраты</p><p id="returns-val" class="mt-2 font-serif text-2xl text-red-700">—</p></div>
+                    <div class="metric-card rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-slate-500">Строк в отчёте</p><p id="rows-val" class="mt-2 font-serif text-2xl">—</p></div>
+                </div>
+                <div id="finance-matching-message" class="rounded-xl border bg-blue-50 p-4 text-sm text-blue-800"></div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl border border-green-200 bg-green-50 p-6"><p class="text-sm font-bold uppercase text-green-700">Лучший день</p><p id="best-day-date" class="mt-2 font-serif text-2xl">Нет данных</p><p id="best-day-profit" class="mt-2 text-xl font-bold text-green-700"></p><p id="best-day-details" class="mt-2 text-sm text-stone-600"></p></div>
+                    <div class="rounded-2xl border border-red-200 bg-red-50 p-6"><p class="text-sm font-bold uppercase text-red-700">Худший день</p><p id="worst-day-date" class="mt-2 font-serif text-2xl">Нет данных</p><p id="worst-day-profit" class="mt-2 text-xl font-bold text-red-700"></p><p id="worst-day-details" class="mt-2 text-sm text-stone-600"></p></div>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-green-700">Лучший товар</p><p id="best-product-name" class="mt-2 font-serif text-xl">Нет данных</p><p id="best-product-profit" class="mt-2 text-lg font-bold text-green-700"></p><p id="best-product-details" class="mt-2 text-sm text-stone-500"></p></div>
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-red-700">Худший товар</p><p id="worst-product-name" class="mt-2 font-serif text-xl">Нет данных</p><p id="worst-product-profit" class="mt-2 text-lg font-bold text-red-700"></p><p id="worst-product-details" class="mt-2 text-sm text-stone-500"></p></div>
+                </div>
+                <div class="grid gap-6 xl:grid-cols-2">
+                    <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                        <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div><h3 class="font-serif text-2xl">Товары</h3><p class="text-sm text-stone-500">Сравнение основных показателей</p></div>
+                            <div class="flex gap-2"><select id="product-chart-metric" class="rounded-xl border bg-stone-50 px-3 py-2"><option value="profit">Прибыль</option><option value="revenue">Выручка</option><option value="expenses">Расходы</option><option value="sales">Продажи</option><option value="margin">Маржинальность</option></select><select id="product-chart-limit" class="rounded-xl border bg-stone-50 px-3 py-2"><option value="10">10 товаров</option><option value="20">20 товаров</option><option value="30">30 товаров</option></select></div>
+                        </div>
+                        <div class="relative h-96"><canvas id="product-chart"></canvas></div>
+                    </div>
+                    <div id="finance-daily-chart-card" class="rounded-2xl border bg-white p-6 shadow-sm">
+                        <div class="mb-5"><h3 class="font-serif text-2xl">Динамика по дням</h3><p class="text-sm text-stone-500">Выручка и чистая прибыль</p></div>
+                        <div class="relative h-96"><canvas id="finance-daily-chart"></canvas></div>
+                    </div>
+                </div>
+                <div class="rounded-2xl border bg-white p-6">
+                    <h3 class="font-serif text-2xl">Детальные расходы</h3>
+                    <p class="mb-4 mt-1 text-sm text-stone-500">Здесь видно, какие расходы уменьшают чистую прибыль</p>
+                    <div id="expenses-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+                </div>
+                <div class="rounded-2xl border bg-white p-6">
+                    <h3 class="mb-4 font-serif text-2xl">ИИ-аналитик</h3>
+                    <div class="flex flex-col gap-3 md:flex-row"><input id="analytics-query" maxlength="1000" placeholder="Задайте вопрос по отчёту" class="w-full rounded-xl border px-4 py-3"><button id="analytics-ask" class="coffee rounded-xl px-7 py-3 font-bold text-white">Спросить</button></div>
+                    <div id="analytics-answer" class="ai-answer mt-4 hidden rounded-xl border bg-stone-50 p-5"></div>
+                </div>
+            </div>
+            </section>
+
+            <section id="section-products" class="app-section hidden space-y-6">
+            <div>
+                <h2 class="font-serif text-3xl">ТОВАРЫ</h2>
+                <p class="mt-2 text-stone-500">Постоянная база ассортимента. Повторная загрузка добавляет новые товары и обновляет существующие.</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Товаров</p><p id="products-count" class="mt-2 font-serif text-3xl">0</p></div>
+                <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Брендов</p><p id="brands-count" class="mt-2 font-serif text-3xl">0</p></div>
+                <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Предметов</p><p id="subjects-count" class="mt-2 font-serif text-3xl">0</p></div>
+            </div>
+            <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                <h3 class="font-serif text-2xl">Обновить ассортимент</h3>
+                <p class="mb-4 mt-1 text-sm text-stone-500">Обязательные колонки: Артикул WB, Бренд, Предмет</p>
+                <div class="flex flex-col gap-3 md:flex-row">
+                    <input id="products-file" type="file" accept=".xlsx,.xls" class="w-full rounded-xl border bg-stone-50 p-3">
+                    <button id="products-upload" class="coffee flex min-w-56 items-center justify-center gap-3 rounded-xl px-6 py-3 font-bold text-white"><span id="products-upload-text">Загрузить товары</span><span id="products-spinner" class="spinner hidden"></span></button>
+                </div>
+                <p id="products-message" class="mt-4 hidden text-sm"></p>
+            </div>
+            <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                <div class="mb-4 flex flex-col gap-3 md:flex-row"><input id="products-search" placeholder="Артикул, бренд, предмет..." class="w-full rounded-xl border px-4 py-3"><button id="products-search-btn" class="rounded-xl border bg-stone-100 px-6 py-3 font-bold">Найти</button></div>
+                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b bg-stone-50"><tr><th class="p-3">Артикул WB</th><th class="p-3">Бренд</th><th class="p-3">Предмет</th><th class="p-3">Артикул продавца</th><th class="p-3">Баркод</th></tr></thead><tbody id="products-table"></tbody></table></div>
+            </div>
+            </section>
+
+            <section id="section-spp" class="app-section hidden space-y-6">
+            <div>
+                <h2 class="font-serif text-3xl">СПП</h2>
+                <p class="mt-2 text-stone-500">Динамика скидки по дням, брендам, предметам и связкам Предмет + Склад + Регион.</p>
+            </div>
+            <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                <input id="spp-file" type="file" accept=".xlsx,.xls" class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
+                <label class="mb-4 block text-sm font-bold text-stone-600">Период анализа<input id="spp-date-range" type="text" placeholder="Выберите начало и конец периода" class="mt-2 block w-full cursor-pointer rounded-xl border bg-stone-50 px-4 py-3 font-normal"></label>
+                <p class="mb-4 text-sm text-stone-500">Если даты не выбраны, анализируется весь файл.</p>
+                <button id="spp-btn" class="coffee flex w-full items-center justify-center gap-3 rounded-xl py-4 text-lg font-bold text-white"><span id="spp-text">Проанализировать СПП</span><span id="spp-spinner" class="spinner hidden"></span></button>
+                <p id="spp-error" class="mt-4 hidden text-sm text-red-600"></p>
+            </div>
+            <details id="spp-history" class="rounded-2xl border bg-white shadow-sm">
+                <summary class="flex cursor-pointer list-none items-center justify-between p-5 font-bold"><span>Предыдущие отчёты <span id="spp-history-count" class="ml-2 text-sm font-normal text-stone-400"></span></span><span class="text-stone-400">⌄</span></summary>
+                <div id="spp-history-list" class="border-t p-3"><p class="p-3 text-sm text-stone-500">Загрузка истории…</p></div>
+            </details>
+            <div id="spp-results" class="hidden space-y-6">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Заказов</p><p id="spp-orders" class="mt-2 font-serif text-3xl">—</p></div>
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Среднее СПП</p><p id="spp-average" class="mt-2 font-serif text-3xl">—</p></div>
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Изменение СПП</p><p id="spp-change" class="mt-2 font-serif text-3xl">—</p></div>
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Изменение заказов</p><p id="orders-change" class="mt-2 font-serif text-3xl">—</p></div>
+                    <div class="rounded-2xl border bg-white p-6"><p class="text-sm font-bold uppercase text-stone-500">Выручка</p><p id="spp-revenue" class="mt-2 font-serif text-3xl text-green-700">—</p><p class="mt-1 text-xs text-stone-500">По «Цена со скидкой»</p></div>
+                </div>
+                <div id="matching-message" class="rounded-xl border bg-blue-50 p-4 text-sm text-blue-800"></div>
+                <div id="top-problem-card" class="hidden rounded-2xl border-2 border-red-300 bg-red-50 p-6"><p class="text-sm font-bold uppercase tracking-wide text-red-700">Самая большая проблема</p><h3 id="top-problem-title" class="mt-2 font-serif text-2xl"></h3><div id="top-problem-values" class="mt-3 text-sm text-red-900"></div></div>
+                <div class="rounded-2xl border bg-white p-6 shadow-sm"><div class="mb-5"><h3 class="font-serif text-2xl">График СПП</h3><p class="text-sm text-stone-500">Средняя скидка и количество заказов по дням</p></div><div class="relative h-96"><canvas id="spp-daily-chart"></canvas></div></div>
+                <div class="rounded-2xl border bg-white p-6"><h3 class="mb-4 font-serif text-2xl">Динамика по дням</h3><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b bg-stone-50"><tr><th class="p-3">День</th><th class="p-3">Заказы</th><th class="p-3">Выручка</th><th class="p-3">Среднее СПП</th><th class="p-3">Изменение СПП</th><th class="p-3">Δ заказов</th><th class="p-3">Δ заказов, %</th></tr></thead><tbody id="spp-daily-table"></tbody></table></div></div>
+                <div class="rounded-2xl border border-red-200 bg-red-50 p-6"><h3 class="font-serif text-2xl text-red-800">Проблемные связки</h3><p class="mb-4 mt-1 text-sm text-red-700">Сверху — связки с самым большим процентным падением заказов</p><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b border-red-200"><tr><th class="p-3">Предмет</th><th class="p-3">Склад</th><th class="p-3">Регион</th><th class="p-3">Выручка</th><th class="p-3">СПП</th><th class="p-3">Δ СПП</th><th class="p-3">Δ заказов</th><th class="p-3">Δ заказов, %</th></tr></thead><tbody id="spp-alerts-table"></tbody></table></div></div>
+                <div class="rounded-2xl border bg-white p-6">
+                    <div class="mb-4 flex flex-wrap gap-2"><button class="spp-tab tab-active rounded-xl px-4 py-2 font-bold" data-table="brands">Бренды</button><button class="spp-tab rounded-xl px-4 py-2 font-bold" data-table="subjects">Предметы</button><button class="spp-tab rounded-xl px-4 py-2 font-bold" data-table="products">Товары</button><button class="spp-tab rounded-xl px-4 py-2 font-bold" data-table="links">Связки</button></div>
+                    <div class="mb-4 grid gap-3 md:grid-cols-3"><input id="spp-table-search" placeholder="Фильтр по названию, складу, региону..." class="rounded-xl border px-4 py-3"><select id="spp-table-sort" class="rounded-xl border bg-stone-50 px-4 py-3"><option value="total_orders">Заказы</option><option value="orders_change_percent">Динамика заказов, %</option><option value="avg_spp">СПП</option><option value="revenue">Выручка</option></select><select id="spp-table-direction" class="rounded-xl border bg-stone-50 px-4 py-3"><option value="desc">От большего к меньшему</option><option value="asc">От меньшего к большему</option></select></div>
+                    <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead id="spp-detail-head" class="border-b bg-stone-50"></thead><tbody id="spp-detail-body"></tbody></table></div>
+                </div>
+                <div class="rounded-2xl border bg-white p-6"><h3 class="font-serif text-2xl">Спросить ИИ по СПП</h3><div class="mt-4 flex flex-col gap-3 md:flex-row"><input id="spp-query" maxlength="1000" placeholder="Например: почему 3 июля упали заказы?" class="w-full rounded-xl border px-4 py-3"><button id="spp-ask" class="coffee rounded-xl px-7 py-3 font-bold text-white">Спросить</button></div><div id="spp-answer" class="ai-answer mt-4 hidden rounded-xl border bg-stone-50 p-5"></div></div>
+            </div>
+            </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API = "https://wbagent-real.onrender.com";
+        let password = "";
+        let analyticsFile = null;
+        let currentFinanceReportId = null;
+        let sppFile = null;
+        let sppData = null;
+        let currentSppReportId = null;
+        let sppDateFrom = "", sppDateTo = "";
+        let productChart = null, financeDailyChart = null, sppDailyChart = null;
+        let financialChartsData = {products:[], daily:[]};
+
+        const $ = id => document.getElementById(id);
+        const show = element => element.classList.remove("hidden");
+        const hide = element => element.classList.add("hidden");
+        const money = value => Number(value || 0).toLocaleString("ru-RU", {minimumFractionDigits:2, maximumFractionDigits:2}) + " ₽";
+        const number = value => Number(value || 0).toLocaleString("ru-RU");
+        const percent = value => value === null || value === undefined ? "—" : Number(value).toLocaleString("ru-RU", {maximumFractionDigits:2}) + "%";
+        const signedChangePercent = value => value === null || value === undefined ? "—" : (Number(value)>0?"+":"") + Number(value).toLocaleString("ru-RU",{maximumFractionDigits:2}) + "%";
+        const signedPercent = value => value === null || value === undefined ? "—" : (Number(value) > 0 ? "+" : "") + Number(value).toLocaleString("ru-RU", {maximumFractionDigits:2}) + " п.п.";
+        const escapeHtml = value => String(value ?? "—").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+
+        Chart.defaults.font.family="Arial, sans-serif"; Chart.defaults.color="#64748b";
+        const shortLabel=(value,max=34)=>{const text=String(value||"Без названия");return text.length>max?text.slice(0,max-1)+"…":text;};
+
+        function renderProductChart(){
+            const metric=$("product-chart-metric").value, limit=Number($("product-chart-limit").value);
+            const info={profit:{key:"profit",label:"Прибыль",color:"#2563eb",money:true},revenue:{key:"revenue",label:"Выручка",color:"#15803d",money:true},expenses:{key:"expenses",label:"Расходы",color:"#dc2626",money:true},sales:{key:"sales",label:"Продажи",color:"#7c563b"},margin:{key:"margin_percent",label:"Маржинальность",color:"#9333ea",percent:true}}[metric];
+            const rows=[...(financialChartsData.products||[])].sort((a,b)=>Number(b[info.key]||0)-Number(a[info.key]||0)).slice(0,limit).reverse();
+            if(productChart)productChart.destroy();
+            productChart=new Chart($("product-chart"),{type:"bar",data:{labels:rows.map(r=>shortLabel(r.name)),datasets:[{label:info.label,data:rows.map(r=>Number(r[info.key]||0)),backgroundColor:info.color+"cc",borderColor:info.color,borderWidth:1,borderRadius:7,borderSkipped:false}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,interaction:{mode:"nearest",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>rows[items[0].dataIndex]?.name||"",label:item=>info.money?`${info.label}: ${money(item.raw)}`:info.percent?`${info.label}: ${percent(item.raw)}`:`${info.label}: ${number(item.raw)}`}}},scales:{x:{beginAtZero:true,grid:{color:"#e7e5e4"},ticks:{callback:v=>info.money?Number(v).toLocaleString("ru-RU",{notation:"compact"}):v}},y:{grid:{display:false}}}}});
+        }
+
+        function renderFinancialCharts(charts={}){
+            financialChartsData=charts; renderProductChart(); const rows=charts.daily||[];
+            $("finance-daily-chart-card").classList.toggle("hidden",!rows.length); if(financeDailyChart)financeDailyChart.destroy(); if(!rows.length)return;
+            financeDailyChart=new Chart($("finance-daily-chart"),{data:{labels:rows.map(r=>r.day),datasets:[{type:"line",label:"Выручка",data:rows.map(r=>r.revenue),borderColor:"#16803d",backgroundColor:"#16803d20",yAxisID:"money",fill:true,tension:.35,pointRadius:4,pointHoverRadius:7},{type:"line",label:"Чистая прибыль",data:rows.map(r=>r.profit),borderColor:"#1976e9",backgroundColor:"#1976e918",yAxisID:"money",fill:true,tension:.35,pointRadius:4,pointHoverRadius:7},{type:"bar",label:"Заказы / продажи",data:rows.map(r=>r.sales),backgroundColor:"#60a5fa99",borderColor:"#1976e9",borderWidth:1,borderRadius:7,yAxisID:"orders"}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:item=>item.dataset.yAxisID==="orders"?`${item.dataset.label}: ${number(item.raw)}`:`${item.dataset.label}: ${money(item.raw)}`}}},scales:{money:{type:"linear",position:"left",grid:{color:"#e7edf5"},ticks:{callback:v=>Number(v).toLocaleString("ru-RU",{notation:"compact"})}},orders:{type:"linear",position:"right",beginAtZero:true,title:{display:true,text:"Заказы"},grid:{drawOnChartArea:false}},x:{grid:{display:false}}}}});
+        }
+
+        function renderSppChart(rows=[]){
+            if(sppDailyChart)sppDailyChart.destroy();
+            if(!rows.length)return;
+            const values=rows.map(r=>Number(r.avg_spp||0));
+            const low=Math.min(...values), high=Math.max(...values), middle=(low+high)/2;
+            const span=Math.max(high-low,5);
+            const min=Math.max(0,Math.floor((middle-span/2)*10)/10);
+            const max=Math.ceil((middle+span/2)*10)/10;
+            sppDailyChart=new Chart($("spp-daily-chart"),{data:{labels:rows.map(r=>r.day),datasets:[{type:"line",label:"Среднее СПП",data:values,borderColor:"#7c3aed",backgroundColor:"#7c3aed20",yAxisID:"spp",fill:true,tension:.35,pointRadius:5,pointHoverRadius:8},{type:"bar",label:"Заказы",data:rows.map(r=>r.orders),backgroundColor:"#7c563b99",borderColor:"#7c563b",borderWidth:1,borderRadius:8,yAxisID:"orders"}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:item=>item.dataset.yAxisID==="spp"?`СПП: ${percent(item.raw)}`:`Заказы: ${number(item.raw)}`}}},scales:{spp:{type:"linear",position:"left",min,max,title:{display:true,text:"СПП, %"},grid:{color:"#e7e5e4"},ticks:{callback:v=>v+"%"}},orders:{type:"linear",position:"right",beginAtZero:true,title:{display:true,text:"Заказы"},grid:{drawOnChartArea:false}},x:{grid:{display:false}}}}});
+        }
+
+        $("product-chart-metric").onchange=renderProductChart; $("product-chart-limit").onchange=renderProductChart;
+
+        function loading(button, text, spinner, active, waitText, normalText) {
+            button.disabled = active;
+            button.classList.toggle("opacity-70", active);
+            text.textContent = active ? waitText : normalText;
+            spinner.classList.toggle("hidden", !active);
+        }
+
+        async function request(path, formData) {
+            const controller=new AbortController();
+            const timeout=setTimeout(()=>controller.abort(),180000);
+            let response;
+            try { response=await fetch(API + path, {method:"POST", body:formData, signal:controller.signal}); }
+            catch(error){ if(error.name==="AbortError")throw new Error("Сервер отвечает слишком долго. Попробуйте ещё раз через минуту"); throw error; }
+            finally { clearTimeout(timeout); }
+            let data;
+            try { data = await response.json(); } catch { throw new Error("Сервер вернул непонятный ответ"); }
+            if (!response.ok) { const detail=data.detail; const error=new Error(typeof detail==="string"?detail:(detail?.message||"Ошибка сервера")); error.code=detail?.code; throw error; }
+            return data;
+        }
+
+        function authForm() { const form = new FormData(); form.append("app_password", password); return form; }
+
+        async function login() {
+            const value = $("auth-password").value.trim() || localStorage.getItem("um_app_password") || "";
+            hide($("login-error"));
+            if (!value) { $("login-error").textContent="Введите пароль"; show($("login-error")); return; }
+            loading($("login-btn"), $("login-text"), $("login-spinner"), true, "Проверяю...", "Войти");
+            const form = new FormData(); form.append("app_password", value);
+            try {
+                await request("/login", form); password=value; localStorage.setItem("um_app_password",value); $("login-screen").style.display="none"; show($("navigation")); show($("logout-btn")); loadProducts(); loadFinanceHistory();
+            } catch(error) { $("login-error").textContent=error.message; show($("login-error")); }
+            finally { loading($("login-btn"), $("login-text"), $("login-spinner"), false, "", "Войти"); }
+        }
+
+        $("login-btn").onclick=login;
+        $("auth-password").onkeydown=event => { if(event.key==="Enter") login(); };
+        $("logout-btn").onclick=()=>{localStorage.removeItem("um_app_password");password="";location.reload();};
+
+        document.querySelectorAll(".nav-btn").forEach(button => button.onclick=()=>{
+            document.querySelectorAll(".nav-btn").forEach(item=>item.classList.remove("tab-active"));
+            button.classList.add("tab-active");
+            document.querySelectorAll(".app-section").forEach(hide);
+            show($("section-" + button.dataset.section));
+            if(button.dataset.section==="analytics") loadFinanceHistory();
+            if(button.dataset.section==="products") loadProducts();
+            if(button.dataset.section==="spp") loadSppHistory();
+        });
+
+        const localDate=date=>date?`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`:"";
+        flatpickr("#spp-date-range",{mode:"range",locale:"ru",dateFormat:"Y-m-d",altInput:true,altFormat:"d.m.Y",rangeSeparator:" — ",onChange:selected=>{sppDateFrom=localDate(selected[0]);sppDateTo=localDate(selected[1]);}});
+
+        function renderFinancialReport(data) {
+            if(data.report_id) currentFinanceReportId=data.report_id;
+            $("revenue-val").textContent=money(data.total_revenue);
+            $("profit-val").textContent=money(data.net_profit);
+            $("expenses-val").textContent=money(data.total_expenses);
+            $("margin-val").textContent=percent(data.margin_percent);
+            $("roi-val").textContent=percent(data.roi_percent);
+            $("sales-val").textContent=number(data.sales_count);
+            $("returns-val").textContent=number(data.returns_count);
+            $("rows-val").textContent=number(data.rows_count);
+
+            const bestDay=data.daily_summary?.best_day;
+            const worstDay=data.daily_summary?.worst_day;
+            $("best-day-date").textContent=bestDay?bestDay.date:"В отчёте нет даты продажи";
+            $("best-day-profit").textContent=bestDay?money(bestDay.profit):"";
+            $("best-day-details").textContent=bestDay?`Выручка: ${money(bestDay.revenue)} · Продажи: ${number(bestDay.sales)}`:"";
+            $("worst-day-date").textContent=worstDay?worstDay.date:"В отчёте нет даты продажи";
+            $("worst-day-profit").textContent=worstDay?money(worstDay.profit):"";
+            $("worst-day-details").textContent=worstDay?`Выручка: ${money(worstDay.revenue)} · Продажи: ${number(worstDay.sales)}`:"";
+
+            const bestProduct=data.product_extremes?.best_product;
+            const worstProduct=data.product_extremes?.worst_product;
+            $("best-product-name").textContent=bestProduct?.name||"Нет данных";
+            $("best-product-profit").textContent=bestProduct?money(bestProduct.profit):"";
+            $("best-product-details").textContent=bestProduct?`Выручка: ${money(bestProduct.revenue)} · Продажи: ${number(bestProduct.sales)}`:"";
+            $("worst-product-name").textContent=worstProduct?.name||"Нет данных";
+            $("worst-product-profit").textContent=worstProduct?money(worstProduct.profit):"";
+            $("worst-product-details").textContent=worstProduct?`Выручка: ${money(worstProduct.revenue)} · Продажи: ${number(worstProduct.sales)}`:"";
+
+            const expenses=Object.entries(data.expenses||{});
+            $("expenses-list").innerHTML=expenses.length?expenses.map(([name,value])=>`<div class="rounded-xl border bg-stone-50 p-4"><p class="text-sm text-stone-500">${escapeHtml(name)}</p><p class="mt-2 font-bold text-red-700">−${money(value)}</p></div>`).join(""):`<p class="text-stone-500">В отчёте не найдены колонки расходов</p>`;
+            const matching=data.product_matching;
+            if(matching){$("finance-matching-message").textContent=matching.message||`База ТОВАРЫ: найдено ${matching.matched_articles} из ${matching.total_articles} артикулов.`;$("finance-matching-message").className=`rounded-xl border p-4 text-sm ${matching.status==="partial"?"border-amber-200 bg-amber-50 text-amber-900":"border-blue-200 bg-blue-50 text-blue-800"}`;}
+            renderFinancialCharts(data.charts||{});
+            show($("analytics-results"));
+        }
+
+        async function loadFinanceHistory(){
+            if(!password)return; const form=authForm();form.append("limit","30");
+            try{const data=await request("/finance/reports",form),reports=data.reports||[];$("finance-history-count").textContent=reports.length?`(${reports.length})`:"";$("finance-history-list").innerHTML=reports.length?reports.map(report=>`<button class="finance-history-item flex w-full flex-col gap-1 rounded-xl p-3 text-left hover:bg-stone-100 sm:flex-row sm:items-center sm:justify-between" data-id="${report.id}"><span><strong>${escapeHtml(report.filename)}</strong><small class="ml-2 text-stone-500">${new Date(report.created_at).toLocaleString("ru-RU")}</small></span><span class="text-sm text-stone-500">${money(report.total_revenue)} · прибыль ${money(report.net_profit)}</span></button>`).join(""):`<p class="p-3 text-sm text-stone-500">Сохранённых финансовых отчётов пока нет.</p>`;document.querySelectorAll(".finance-history-item").forEach(button=>button.onclick=()=>openFinanceReport(button.dataset.id));}catch(error){$("finance-history-list").innerHTML=`<p class="p-3 text-sm text-red-600">${escapeHtml(error.message)}</p>`;}
+        }
+
+        async function openFinanceReport(id){
+            $("finance-history-list").classList.add("opacity-60");const form=authForm();form.append("report_id",id);
+            try{const report=await request("/finance/reports/load",form);currentFinanceReportId=report.id;renderFinancialReport(report.analysis);$("finance-history").open=false;window.setTimeout(()=>$("analytics-results").scrollIntoView({behavior:"smooth",block:"start"}),100);}catch(error){$("analytics-error").textContent=error.message;show($("analytics-error"));}finally{$("finance-history-list").classList.remove("opacity-60");}
+        }
+
+        $("analytics-btn").onclick=async()=>{
+            analyticsFile=$("analytics-file").files[0]; hide($("analytics-error"));
+            if(!analyticsFile){ $("analytics-error").textContent="Выберите файл"; show($("analytics-error")); return; }
+            loading($("analytics-btn"), $("analytics-text"), $("analytics-spinner"), true, "Анализирую...", "Запустить анализ");
+            const form=authForm(); form.append("file", analyticsFile);
+            try { const data=await request("/analyze",form); renderFinancialReport(data); await loadFinanceHistory(); }
+            catch(error){ if(error.code==="spp_report" && confirm(error.message)){document.querySelector('[data-section="spp"]').click();$("spp-file").files=$("analytics-file").files;sppFile=analyticsFile;}else{$("analytics-error").textContent=error.message;show($("analytics-error"));} }
+            finally { loading($("analytics-btn"), $("analytics-text"), $("analytics-spinner"), false, "", "Запустить анализ"); }
+        };
+
+        $("analytics-ask").onclick=async()=>{
+            const query=$("analytics-query").value.trim(); if(!query)return; if(!currentFinanceReportId){$("analytics-answer").textContent="Сначала загрузите или откройте финансовый отчёт.";show($("analytics-answer"));return;}
+            const form=authForm(); form.append("report_id",currentFinanceReportId); form.append("user_query",query); $("analytics-answer").textContent="ИИ анализирует данные..."; show($("analytics-answer"));
+            try { const data=await request("/finance/ask",form); $("analytics-answer").textContent=data.ai_response; } catch(error){ $("analytics-answer").textContent="Ошибка: "+error.message; }
+        };
+
+        async function loadProducts() {
+            if(!password) return;
+            const form=authForm(); form.append("search",$("products-search").value.trim()); form.append("limit","200");
+            try {
+                const data=await request("/products/list",form); $("products-count").textContent=number(data.stats.products); $("brands-count").textContent=number(data.stats.brands); $("subjects-count").textContent=number(data.stats.subjects);
+                $("products-table").innerHTML=data.products.map(item=>`<tr class="border-b"><td class="p-3 font-medium">${escapeHtml(item.wb_article)}</td><td class="p-3">${escapeHtml(item.brand)}</td><td class="p-3">${escapeHtml(item.subject)}</td><td class="p-3">${escapeHtml(item.seller_article)}</td><td class="p-3">${escapeHtml(item.barcode)}</td></tr>`).join("");
+            } catch(error) { $("products-message").textContent=error.message; $("products-message").className="mt-4 text-sm text-red-600"; show($("products-message")); }
+        }
+        $("products-search-btn").onclick=loadProducts;
+        $("products-search").onkeydown=event=>{if(event.key==="Enter")loadProducts();};
+
+        $("products-upload").onclick=async()=>{
+            const file=$("products-file").files[0]; hide($("products-message")); if(!file){$("products-message").textContent="Выберите файл ассортимента";$("products-message").className="mt-4 text-sm text-red-600";show($("products-message"));return;}
+            loading($("products-upload"),$("products-upload-text"),$("products-spinner"),true,"Загружаю...","Загрузить товары");
+            const form=authForm(); form.append("file",file);
+            try { const data=await request("/products/upload",form); $("products-message").textContent=`Готово: добавлено ${data.added}, обновлено ${data.updated}, всего в базе ${data.total}`; $("products-message").className="mt-4 text-sm text-green-700"; show($("products-message")); await loadProducts(); }
+            catch(error){$("products-message").textContent=error.message;$("products-message").className="mt-4 text-sm text-red-600";show($("products-message"));}
+            finally{loading($("products-upload"),$("products-upload-text"),$("products-spinner"),false,"","Загрузить товары");}
+        };
+
+        function renderSpp(data) {
+            sppData=data; const summary=data.summary;
+            $("spp-orders").textContent=number(summary.orders); $("spp-average").textContent=percent(summary.avg_spp); $("spp-change").textContent=signedPercent(summary.spp_change); $("orders-change").textContent=(summary.orders_change>0?"+":"")+number(summary.orders_change)+" ("+signedChangePercent(summary.orders_change_percent)+")"; $("spp-revenue").textContent=money(summary.revenue);
+            const match=data.product_matching; $("matching-message").textContent=match.message||`База ТОВАРЫ: найдено ${match.matched_articles} из ${match.total_articles} артикулов. Не найдено: ${match.missing_articles}.`;$("matching-message").className=`rounded-xl border p-4 text-sm ${match.status==="partial"?"border-amber-200 bg-amber-50 text-amber-900":"border-blue-200 bg-blue-50 text-blue-800"}`;
+            $("spp-daily-table").innerHTML=data.daily.map(row=>`<tr class="border-b"><td class="p-3">${escapeHtml(row.day)}</td><td class="p-3">${number(row.orders)}</td><td class="p-3 font-medium text-green-700">${money(row.revenue)}</td><td class="p-3 font-bold">${percent(row.avg_spp)}</td><td class="p-3">${signedPercent(row.spp_change)}</td><td class="p-3">${row.orders_change===null?"—":number(row.orders_change)}</td><td class="p-3 font-bold ${Number(row.orders_change_percent)<0?'text-red-700':'text-green-700'}">${signedChangePercent(row.orders_change_percent)}</td></tr>`).join("");
+            $("spp-alerts-table").innerHTML=data.alerts.length ? data.alerts.map(row=>`<tr class="border-b border-red-200"><td class="p-3">${escapeHtml(row.subject)}</td><td class="p-3">${escapeHtml(row.warehouse)}</td><td class="p-3">${escapeHtml(row.region)}</td><td class="p-3 text-green-800">${money(row.revenue)}</td><td class="p-3">${percent(row.avg_spp)}</td><td class="p-3 font-bold text-red-700">${signedPercent(row.spp_change)}</td><td class="p-3 font-bold text-red-700">${number(row.orders_change)}</td><td class="p-3 font-bold text-red-700">${signedChangePercent(row.orders_change_percent)}</td></tr>`).join("") : `<tr><td colspan="8" class="p-4 text-stone-500">Связок с падением заказов не найдено</td></tr>`;
+            const top=data.alerts?.[0];
+            if(top){$("top-problem-title").textContent=`${top.subject} · ${top.warehouse} → ${top.region}`;$("top-problem-values").textContent=`Заказы: было ${number(top.previous_orders)}, стало ${number(top.current_orders)} · изменение ${number(top.orders_change)} (${signedChangePercent(top.orders_change_percent)}) · СПП: ${signedPercent(top.spp_change)} · Выручка: ${money(top.revenue)}`;show($("top-problem-card"));}else hide($("top-problem-card"));
+            renderSppChart(data.daily||[]);
+            renderSppDetail("brands"); show($("spp-results"));
+        }
+
+        async function loadSppHistory(){
+            if(!password)return; const form=authForm();form.append("limit","30");
+            try{const data=await request("/spp/reports",form),reports=data.reports||[];$("spp-history-count").textContent=reports.length?`(${reports.length})`:"";$("spp-history-list").innerHTML=reports.length?reports.map(report=>`<button class="spp-history-item flex w-full flex-col gap-1 rounded-xl p-3 text-left hover:bg-stone-100 sm:flex-row sm:items-center sm:justify-between" data-id="${report.id}"><span><strong>${escapeHtml(report.filename)}</strong><small class="ml-2 text-stone-500">${escapeHtml(report.date_from||"—")} — ${escapeHtml(report.date_to||"—")}</small></span><span class="text-sm text-stone-500">${number(report.orders)} заказов · ${money(report.revenue)}</span></button>`).join(""):`<p class="p-3 text-sm text-stone-500">Сохранённых СПП-отчётов пока нет.</p>`;document.querySelectorAll(".spp-history-item").forEach(button=>button.onclick=()=>openSppReport(button.dataset.id));}catch(error){$("spp-history-list").innerHTML=`<p class="p-3 text-sm text-red-600">${escapeHtml(error.message)}</p>`;}
+        }
+
+        async function openSppReport(id){
+            $("spp-history-list").classList.add("opacity-60");const form=authForm();form.append("report_id",id);
+            try{const report=await request("/spp/reports/load",form);currentSppReportId=report.id;renderSpp(report.analysis);$("spp-history").open=false;window.setTimeout(()=>$("spp-results").scrollIntoView({behavior:"smooth",block:"start"}),100);}catch(error){$("spp-error").textContent=error.message;show($("spp-error"));}finally{$("spp-history-list").classList.remove("opacity-60");}
+        }
+
+        function renderSppDetail(type) {
+            if(!sppData)return; let rows=[...(sppData[type]||[])];
+            const search=$("spp-table-search").value.trim().toLowerCase(); if(search)rows=rows.filter(row=>Object.values(row).some(value=>String(value??"").toLowerCase().includes(search)));
+            const sortKey=$("spp-table-sort").value, direction=$("spp-table-direction").value==="asc"?1:-1; rows.sort((a,b)=>(Number(a[sortKey]??0)-Number(b[sortKey]??0))*direction);
+            const configs={brands:{heads:["Бренд","Заказы","Выручка","СПП","Δ СПП","Δ заказов","Δ заказов, %"],cells:r=>[r.brand,number(r.total_orders),money(r.revenue),percent(r.avg_spp),signedPercent(r.spp_change),number(r.orders_change),signedChangePercent(r.orders_change_percent)]},subjects:{heads:["Предмет","Заказы","Выручка","СПП","Δ СПП","Δ заказов","Δ заказов, %"],cells:r=>[r.subject,number(r.total_orders),money(r.revenue),percent(r.avg_spp),signedPercent(r.spp_change),number(r.orders_change),signedChangePercent(r.orders_change_percent)]},products:{heads:["Товар","Артикул WB","Заказы","Выручка","СПП","Δ СПП","Δ заказов, %"],cells:r=>[r.product,r.wb_article,number(r.total_orders),money(r.revenue),percent(r.avg_spp),signedPercent(r.spp_change),signedChangePercent(r.orders_change_percent)]},links:{heads:["Предмет","Склад","Регион","Заказы","Выручка","СПП","Δ СПП","Δ заказов","Δ заказов, %"],cells:r=>[r.subject,r.warehouse,r.region,number(r.total_orders),money(r.revenue),percent(r.avg_spp),signedPercent(r.spp_change),number(r.orders_change),signedChangePercent(r.orders_change_percent)]}};
+            const config=configs[type]; $("spp-detail-head").innerHTML="<tr>"+config.heads.map(head=>`<th class="p-3">${head}</th>`).join("")+"</tr>"; $("spp-detail-body").innerHTML=rows.map(row=>"<tr class=\"border-b\">"+config.cells(row).map(cell=>`<td class="p-3">${escapeHtml(cell)}</td>`).join("")+"</tr>").join("");
+        }
+        document.querySelectorAll(".spp-tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".spp-tab").forEach(item=>item.classList.remove("tab-active"));button.classList.add("tab-active");renderSppDetail(button.dataset.table);});
+        ["spp-table-search","spp-table-sort","spp-table-direction"].forEach(id=>$(id).addEventListener(id==="spp-table-search"?"input":"change",()=>renderSppDetail(document.querySelector(".spp-tab.tab-active")?.dataset.table||"brands")));
+
+        async function analyzeSpp(query="") {
+            sppFile=$("spp-file").files[0]||sppFile; hide($("spp-error")); if(!sppFile){$("spp-error").textContent="Выберите СПП-отчёт";show($("spp-error"));return;}
+            loading($("spp-btn"),$("spp-text"),$("spp-spinner"),true,"Анализирую...","Проанализировать СПП"); const form=authForm();form.append("file",sppFile);if(sppDateFrom)form.append("date_from",sppDateFrom);if(sppDateTo)form.append("date_to",sppDateTo);
+            try{const response=await request("/spp/analyze",form);currentSppReportId=response.report_id;renderSpp(response.analysis);await loadSppHistory();}
+            catch(error){$("spp-error").textContent=error.message;show($("spp-error"));}
+            finally{loading($("spp-btn"),$("spp-text"),$("spp-spinner"),false,"","Проанализировать СПП");}
+        }
+        $("spp-btn").onclick=()=>analyzeSpp();
+        $("spp-ask").onclick=async()=>{const query=$("spp-query").value.trim();if(!query)return;if(!currentSppReportId){$("spp-answer").textContent="Сначала загрузите или откройте СПП-отчёт.";show($("spp-answer"));return;}const button=$("spp-ask"),original=button.textContent;button.disabled=true;button.textContent="ИИ думает…";$("spp-answer").textContent="Анализирую отчёт…";show($("spp-answer"));const form=authForm();form.append("report_id",currentSppReportId);form.append("user_query",query);try{const data=await request("/spp/ask",form);$("spp-answer").textContent=data.ai_response||"ИИ не вернул ответ.";}catch(error){$("spp-answer").textContent="Ошибка ИИ: "+error.message;}finally{button.disabled=false;button.textContent=original;}};
+
+        window.addEventListener("DOMContentLoaded",()=>{
+            if(localStorage.getItem("um_app_password")) login();
+        });
+    </script>
+</body>
+</html>
