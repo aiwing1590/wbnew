@@ -77,12 +77,13 @@
             <div class="app-card mx-auto max-w-2xl rounded-3xl border bg-white p-8 text-center shadow-lg">
                 <div class="mb-4 text-5xl">📊</div>
                 <h2 class="font-serif text-3xl">Финансовый отчёт</h2>
-                <p class="mb-6 mt-2 text-stone-500">Загрузите Excel для расчёта выручки, расходов и прибыли</p>
-                <input id="analytics-file" type="file" accept=".xlsx,.xls" class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
+                <p class="mb-6 mt-2 text-stone-500">Выберите один или сразу несколько Excel-файлов. Каждый отчёт проверяется и сохраняется отдельно.</p>
+                <input id="analytics-file" type="file" accept=".xlsx,.xls" multiple class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
                 <button id="analytics-btn" class="coffee flex w-full items-center justify-center gap-3 rounded-xl py-4 text-lg font-bold text-white">
                     <span id="analytics-text">Запустить анализ</span><span id="analytics-spinner" class="spinner hidden"></span>
                 </button>
                 <p id="analytics-error" class="mt-4 hidden text-sm text-red-600"></p>
+                <div id="analytics-batch-results" class="mt-4 hidden text-left"></div>
             </div>
             <details id="finance-history" class="mt-6 rounded-2xl border bg-white shadow-sm">
                 <summary class="flex cursor-pointer list-none items-center justify-between p-5 font-bold"><span>Предыдущие финансовые отчёты <span id="finance-history-count" class="ml-2 text-sm font-normal text-stone-400"></span></span><span class="text-stone-400">⌄</span></summary>
@@ -148,10 +149,11 @@
                 <h3 class="font-serif text-2xl">Обновить ассортимент</h3>
                 <p class="mb-4 mt-1 text-sm text-stone-500">Обязательные колонки: Артикул WB, Бренд, Предмет</p>
                 <div class="flex flex-col gap-3 md:flex-row">
-                    <input id="products-file" type="file" accept=".xlsx,.xls" class="w-full rounded-xl border bg-stone-50 p-3">
+                    <input id="products-file" type="file" accept=".xlsx,.xls" multiple class="w-full rounded-xl border bg-stone-50 p-3">
                     <button id="products-upload" class="coffee flex min-w-56 items-center justify-center gap-3 rounded-xl px-6 py-3 font-bold text-white"><span id="products-upload-text">Загрузить товары</span><span id="products-spinner" class="spinner hidden"></span></button>
                 </div>
                 <p id="products-message" class="mt-4 hidden text-sm"></p>
+                <div id="products-batch-results" class="mt-4 hidden"></div>
             </div>
             <div class="rounded-2xl border bg-white p-6 shadow-sm">
                 <div class="mb-4 flex flex-col gap-3 md:flex-row"><input id="products-search" placeholder="Артикул, бренд, предмет..." class="w-full rounded-xl border px-4 py-3"><button id="products-search-btn" class="rounded-xl border bg-stone-100 px-6 py-3 font-bold">Найти</button></div>
@@ -165,7 +167,8 @@
                 <p class="mt-2 text-stone-500">Динамика скидки по дням, брендам, предметам и связкам Предмет + Склад + Регион.</p>
             </div>
             <div class="rounded-2xl border bg-white p-6 shadow-sm">
-                <input id="spp-file" type="file" accept=".xlsx,.xls" class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
+                <input id="spp-file" type="file" accept=".xlsx,.xls" multiple class="mb-4 block w-full rounded-xl border bg-stone-50 p-4">
+                <p class="-mt-2 mb-4 text-sm text-stone-500">Можно выбрать сразу весь год. Корректные файлы сохранятся, а чужие или повреждённые будут показаны отдельным списком.</p>
                 <label class="mb-2 block text-sm font-bold text-stone-600">Период анализа<input id="spp-date-range" type="text" placeholder="Выберите начало и конец периода" class="mt-2 block w-full cursor-pointer rounded-xl border bg-stone-50 px-4 py-3 font-normal"></label>
                 <button id="spp-date-clear" type="button" class="mb-4 text-sm font-bold text-blue-600 hover:text-blue-800">Сбросить даты</button>
                 <p class="mb-2 text-sm text-stone-500">Если файл не выбран, УМ найдёт ранее сохранённые данные за указанный период.</p>
@@ -182,6 +185,7 @@
                 </details>
                 <button id="spp-btn" class="coffee flex w-full items-center justify-center gap-3 rounded-xl py-4 text-lg font-bold text-white"><span id="spp-text">Открыть период / загрузить СПП</span><span id="spp-spinner" class="spinner hidden"></span></button>
                 <p id="spp-error" class="mt-4 hidden text-sm text-red-600"></p>
+                <div id="spp-batch-results" class="mt-4 hidden"></div>
             </div>
             <details id="spp-history" class="rounded-2xl border bg-white shadow-sm">
                 <summary class="flex cursor-pointer list-none items-center justify-between p-5 font-bold"><span>Предыдущие отчёты <span id="spp-history-count" class="ml-2 text-sm font-normal text-stone-400"></span></span><span class="text-stone-400">⌄</span></summary>
@@ -327,6 +331,14 @@
         }
 
         function authForm() { const form = new FormData(); form.append("session_token", sessionToken); return form; }
+        function appendFiles(form, files){[...files].forEach(file=>form.append("files",file));}
+        function renderBatchResults(targetId,data){
+            const target=$(targetId),rows=data.results||[];
+            if(!rows.length){hide(target);return;}
+            const accepted=Number(data.accepted||0),rejected=Number(data.rejected||0);
+            target.innerHTML=`<div class="rounded-xl border ${rejected?'border-amber-200 bg-amber-50':'border-green-200 bg-green-50'} p-4"><div class="mb-3 font-bold">Обработано: ${rows.length} · принято: <span class="text-green-700">${accepted}</span> · отклонено: <span class="text-red-700">${rejected}</span></div><div class="max-h-64 space-y-2 overflow-y-auto">${rows.map(item=>`<div class="flex gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm"><span>${item.status==='accepted'?'✅':'❌'}</span><div class="min-w-0"><div class="break-all font-medium">${escapeHtml(item.filename||'Файл')}</div><div class="${item.status==='accepted'?'text-green-700':'text-red-700'}">${item.status==='accepted'?`Принят${item.saved_rows!=null?` · сохранено строк: ${number(item.saved_rows)}`:''}`:escapeHtml(item.message||'Файл отклонён')}</div></div></div>`).join('')}</div></div>`;
+            show(target);
+        }
 
         function enterApp() {
             $("login-screen").style.display="none";
@@ -433,12 +445,12 @@
         }
 
         $("analytics-btn").onclick=async()=>{
-            analyticsFile=$("analytics-file").files[0]; hide($("analytics-error"));
-            if(!analyticsFile){ $("analytics-error").textContent="Выберите файл"; show($("analytics-error")); return; }
+            const files=$("analytics-file").files; hide($("analytics-error"));hide($("analytics-batch-results"));
+            if(!files.length){ $("analytics-error").textContent="Выберите хотя бы один файл"; show($("analytics-error")); return; }
             loading($("analytics-btn"), $("analytics-text"), $("analytics-spinner"), true, "Анализирую...", "Запустить анализ");
-            const form=authForm(); form.append("file", analyticsFile);
-            try { const data=await request("/analyze",form); renderFinancialReport(data); await loadFinanceHistory(); }
-            catch(error){ if(error.code==="spp_report" && confirm(error.message)){document.querySelector('[data-section="spp"]').click();$("spp-file").files=$("analytics-file").files;sppFile=analyticsFile;}else{$("analytics-error").textContent=error.message;show($("analytics-error"));} }
+            const form=authForm(); appendFiles(form,files);
+            try { const data=await request("/analyze-batch",form);renderBatchResults("analytics-batch-results",data);if(data.analysis)renderFinancialReport(data.analysis);await loadFinanceHistory(); }
+            catch(error){$("analytics-error").textContent=error.message;show($("analytics-error"));}
             finally { loading($("analytics-btn"), $("analytics-text"), $("analytics-spinner"), false, "", "Запустить анализ"); }
         };
 
@@ -460,10 +472,10 @@
         $("products-search").onkeydown=event=>{if(event.key==="Enter")loadProducts();};
 
         $("products-upload").onclick=async()=>{
-            const file=$("products-file").files[0]; hide($("products-message")); if(!file){$("products-message").textContent="Выберите файл ассортимента";$("products-message").className="mt-4 text-sm text-red-600";show($("products-message"));return;}
+            const files=$("products-file").files;hide($("products-message"));hide($("products-batch-results"));if(!files.length){$("products-message").textContent="Выберите хотя бы один файл ассортимента";$("products-message").className="mt-4 text-sm text-red-600";show($("products-message"));return;}
             loading($("products-upload"),$("products-upload-text"),$("products-spinner"),true,"Загружаю...","Загрузить товары");
-            const form=authForm(); form.append("file",file);
-            try { const data=await request("/products/upload",form); $("products-message").textContent=`Готово: добавлено ${data.added}, обновлено ${data.updated}, всего в базе ${data.total}`; $("products-message").className="mt-4 text-sm text-green-700"; show($("products-message")); await loadProducts(); }
+            const form=authForm();appendFiles(form,files);
+            try { const data=await request("/products/upload-batch",form);renderBatchResults("products-batch-results",data);$("products-message").textContent=`Добавлено ${data.added}, обновлено ${data.updated}, всего в базе ${data.total}`;$("products-message").className="mt-4 text-sm text-green-700";show($("products-message"));await loadProducts(); }
             catch(error){$("products-message").textContent=error.message;$("products-message").className="mt-4 text-sm text-red-600";show($("products-message"));}
             finally{loading($("products-upload"),$("products-upload-text"),$("products-spinner"),false,"","Загрузить товары");}
         };
@@ -515,14 +527,14 @@
         }
 
         async function analyzeSpp(query="") {
-            sppFile=$("spp-file").files[0]||null; hide($("spp-error"));
-            if(!sppFile&&(!sppDateFrom||!sppDateTo)){$("spp-error").textContent="Выберите файл или начало и конец сохранённого периода";show($("spp-error"));return;}
+            const files=$("spp-file").files;hide($("spp-error"));hide($("spp-batch-results"));
+            if(!files.length&&(!sppDateFrom||!sppDateTo)){$("spp-error").textContent="Выберите файлы или начало и конец сохранённого периода";show($("spp-error"));return;}
             loading($("spp-btn"),$("spp-text"),$("spp-spinner"),true,"Анализирую...","Открыть период / загрузить СПП");
             const form=authForm();let path="/spp/analyze-period";
-            if(sppFile){path="/spp/analyze";form.append("file",sppFile);}
+            if(files.length){path="/spp/analyze-batch";appendFiles(form,files);}
             if(sppDateFrom)form.append("date_from",sppDateFrom);if(sppDateTo)form.append("date_to",sppDateTo);
-            if(!sppFile)appendSppFilters(form);
-            try{const response=await request(path,form);currentSppReportId=response.report_id;renderSpp(response.analysis);await loadSppHistory();await loadSppStorage();}
+            if(!files.length)appendSppFilters(form);
+            try{const response=await request(path,form);if(response.results)renderBatchResults("spp-batch-results",response);if(response.analysis){currentSppReportId=response.report_id;renderSpp(response.analysis);}await loadSppHistory();await loadSppStorage();}
             catch(error){$("spp-error").textContent=error.message;show($("spp-error"));}
             finally{loading($("spp-btn"),$("spp-text"),$("spp-spinner"),false,"","Открыть период / загрузить СПП");}
         }
